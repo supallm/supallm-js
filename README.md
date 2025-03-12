@@ -93,12 +93,3 @@ const result = await supallm
 
 console.log("result:", result);
 ```
-
-<p align="center">
-.
-</p>
-🌟 Give us some love by starring this repository! 🌟
-
-<p align="center">
-.
-</p>
