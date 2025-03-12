@@ -3,6 +3,6 @@ module.exports = {
   branches: [
     "main",
     { name: "next", prerelease: true },
-    { name: "alpha", channel: "alpha", prerelease: true },
+    { name: "alpha", prerelease: true },
   ],
 };
