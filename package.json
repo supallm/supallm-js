@@ -8,7 +8,7 @@
   "homepage": "https://supallm.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/supallm/supallm"
+    "url": "https://github.com/supallm/supallm-js"
   },
   "scripts": {
     "build": "npx rollup -c",
