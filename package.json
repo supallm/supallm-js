@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "eventsource": "^3.0.5",
-    "nanoevents": "^9.1.0",
-    "supallm": "file:supallm-0.0.0.tgz"
+    "nanoevents": "^9.1.0"
   }
 }
