@@ -1,15 +1,3 @@
-import { FlowResponse } from "./flow-response";
-
-export interface FlowResponseFactory {
-  create(params: {
-    projectUrl: string;
-    publicKey: string;
-    flowId: string;
-    externalAccessToken: string | null;
-    inputs: Record<string, string>;
-  }): FlowResponse;
-}
-
 export type SSEEventData = {
   fieldName: string;
   value: string;

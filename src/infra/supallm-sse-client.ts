@@ -43,16 +43,16 @@ export class SupallmSSEClient implements SSEClient {
 
   constructor(
     private readonly config: {
-      projectUrl: string;
+      apiUrl: string;
+      projectId: string;
       flowId: string;
       externalAccessToken: string | null;
       publicKey: string;
       inputs: Record<string, string | number | boolean>;
     }
   ) {
-    const url = new URL(this.config.projectUrl);
-    this.baseUrl = `${url.origin}`;
-    this.projectId = url.pathname.split('/')[1];
+    this.baseUrl = config.apiUrl;
+    this.projectId = config.projectId;
   }
 
   get workflowId() {

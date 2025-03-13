@@ -1,5 +1,5 @@
 import { SupallmClient } from "./core/client";
-import { FlowResponseFactory } from "./core/interfaces";
+import { FlowResponseFactory } from "./core/flow-response";
 import { MockFlowResponseFactory } from "./infra/mock-flow-response-factory";
 import { SupallmFlowResponseFactory } from "./infra/supallm-flow-response-factory";
 
@@ -7,25 +7,32 @@ import { SupallmFlowResponseFactory } from "./infra/supallm-flow-response-factor
  * Initializes the Supallm client with the provided parameters.
  *
  * @param {Object} params - The parameters for initializing the Supallm client.
- * @param {string} params.projectUrl - The URL of the Supallm project.
+ * @param {string} params.projectId - The ID of the Supallm project.
  * @param {string} params.publicKey - The public key for the Supallm project.
  * @returns {SupallmClient} The initialized Supallm client.
  */
 export const initSupallm = (params: {
-  projectUrl: string;
+  projectId: string;
   publicKey: string;
-}, devMode: boolean = false) => {
+}, options: {
+  mocked: boolean;
+  apiUrl: string;
+} = {
+  mocked: false,
+  apiUrl: "https://api.supallm.com",
+}) => {
   let flowResponseFactory: FlowResponseFactory;
-  
-  if (devMode) {
+
+  if (options.mocked) {
     flowResponseFactory = new MockFlowResponseFactory();
   } else {
     flowResponseFactory = new SupallmFlowResponseFactory();
   }
 
   const client = new SupallmClient(
-    params.projectUrl,
+    params.projectId,
     params.publicKey,
+    options.apiUrl,
     flowResponseFactory,
   );
 

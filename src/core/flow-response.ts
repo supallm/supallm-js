@@ -25,7 +25,8 @@ export interface FlowEvent {
 }
 
 export type CreateFlowResponseParams = {
-  projectUrl: string;
+  projectId: string;
+  apiUrl: string;
   publicKey: string;
   externalAccessToken: string | null;
   flowId: string;

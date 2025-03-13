@@ -1,5 +1,5 @@
-import { FlowResponse } from "../core/flow-response";
-import { FlowResponseFactory } from "../core/interfaces";
+import { FlowResponse, FlowResponseFactory } from "../core/flow-response";
+
 import { MockSSEClient } from "./mock-sse-client";
 
 export class MockFlowResponseFactory implements FlowResponseFactory {

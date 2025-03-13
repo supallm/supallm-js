@@ -1,5 +1,6 @@
 import { FlowResponseFactory } from "./flow-response";
 
+
 export type RunFlowParams = {
   flowId: string;
   inputs: Record<string, string | number | boolean>;
@@ -9,8 +10,9 @@ export class SupallmClient {
   private externalAccessToken: string | null = null;
 
   constructor(
-    private readonly projectUrl: string,
+    private readonly projectId: string,
     private readonly publicKey: string,
+    private readonly apiUrl: string,
     private flowResponseFactory: FlowResponseFactory,
   ) {}
 
@@ -70,7 +72,8 @@ export class SupallmClient {
    */
   runFlow(params: RunFlowParams) {
     return this.flowResponseFactory.create({
-      projectUrl: this.projectUrl,
+      apiUrl: this.apiUrl,
+      projectId: this.projectId,
       publicKey: this.publicKey,
       externalAccessToken: this.externalAccessToken,
       flowId: params.flowId,
