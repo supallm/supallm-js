@@ -1,4 +1,4 @@
-import { createNanoEvents, Emitter } from "nanoevents";
+import { createNanoEvents, Unsubscribe } from "nanoevents";
 import { SSEClient, SSEEventDataMap } from "../core/interfaces";
 
 export type FlowEventDataType = "text" | "image";
@@ -34,6 +34,10 @@ export type CreateFlowResponseParams = {
 
 export interface FlowResponseFactory {
   create(params: CreateFlowResponseParams): FlowResponse;
+}
+
+export interface FlowSubscription{
+  on<K extends keyof FlowEvent>(this: this, event: K, cb: FlowEvent[K]): Unsubscribe
 }
 
 type FlowResponseStatus = "pending" | "running" | "complete" | "error";
@@ -105,7 +109,7 @@ export class FlowResponse {
     });
   }
 
-  public subscribe(): Emitter<FlowEvent> {
+  public subscribe(): FlowSubscription {
     this.startSSE();
     return this.emitter;
   }

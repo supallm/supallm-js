@@ -30,4 +30,7 @@ export type {
   FlowResponse,
   FlowResult,
   FlowEventDataType,
+  FlowSubscription,
 } from './core/flow-response';
+
+export type { Unsubscribe } from 'nanoevents';
