@@ -1,7 +1,7 @@
 import { initSupallm } from "supallm";
 
 const supallm = initSupallm({
-  projectUrl: "https://supallm.com/project-id",
+  projectUrl: "http://localhost:3001/3ac02582-79ae-40fe-92b0-26e72383a564",
   publicKey: "public-key",
 });
 
@@ -12,9 +12,9 @@ supallm.setAccessToken("access-token");
  */
 const result = supallm
   .runFlow({
-    flowId: "flow-id",
+    flowId: "f641cf81-5f51-4da9-b08a-504f15834351",
     inputs: {
-      name: "John Doe",
+      prompt: "Write a short story about a cat"
     },
   })
   .subscribe();
@@ -36,9 +36,9 @@ result.on("error", (event) => {
  */
 supallm
   .runFlow({
-    flowId: "flow-id",
+    flowId: "f641cf81-5f51-4da9-b08a-504f15834351",
     inputs: {
-      name: "John Doe",
+      prompt: "answer shot because I am running out of money",
     },
   })
   .wait()

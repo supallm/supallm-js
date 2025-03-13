@@ -5,6 +5,7 @@ export interface FlowResponseFactory {
     projectUrl: string;
     publicKey: string;
     flowId: string;
+    externalAccessToken: string | null;
     inputs: Record<string, string>;
   }): FlowResponse;
 }
@@ -42,6 +43,7 @@ export interface SSEEventDataMap {
 
 export interface SSEClient {
   triggerFlow(): Promise<{ sessionId: string }>;
+  listenFlow(sessionId: string): void;
   addEventListener<K extends SSEClientEventType>(
     event: K,
     callback: (data: SSEEventDataMap[K]) => void,

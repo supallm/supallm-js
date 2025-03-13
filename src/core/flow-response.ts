@@ -95,9 +95,7 @@ export class FlowResponse {
     this.updateStatus("complete");
   }
 
-  private startSSE() {
-    this.sseClient.triggerFlow();
-
+  private async startSSE() {
     this.sseClient.addEventListener("data", (event) => {
       this.onData(event);
     });
@@ -107,6 +105,10 @@ export class FlowResponse {
     this.sseClient.addEventListener("complete", () => {
       this.onEnd();
     });
+
+    const { sessionId } = await this.sseClient.triggerFlow();
+
+    this.sseClient.listenFlow(sessionId);
   }
 
   public subscribe(): FlowSubscription {

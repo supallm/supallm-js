@@ -4,20 +4,6 @@ import {
   SSEEventDataMap,
 } from "../core/interfaces";
 
-export interface SSEClientFactory {
-  create(
-    flowId: string,
-    params: Record<string, any>,
-    externalAccessToken: string,
-  ): SSEClient;
-}
-
-export class MockSSEClientFactory implements SSEClientFactory {
-  create(): SSEClient {
-    return new MockSSEClient();
-  }
-}
-
 const veryLongText = `Hello! I am your AI assistant. I'm here to help you with a variety of tasks. Whether you need assistance with coding, writing, or just need someone to talk to, I'm here for you. Let's get started!
 
 First, let me tell you a bit about myself. I am powered by advanced machine learning algorithms that allow me to understand and generate human-like text. This means I can help you draft emails, write reports, and even create content for your blog. Just give me a topic, and I'll get to work!
@@ -88,6 +74,10 @@ export class MockSSEClient implements SSEClient {
 
   triggerFlow(): Promise<{ sessionId: string }> {
     return Promise.resolve({ sessionId: "123" });
+  }
+
+  listenFlow(sessionId: string): void {
+    console.log("Listening to flow at mock", sessionId);
   }
 
   addEventListener<K extends SSEClientEventType>(
