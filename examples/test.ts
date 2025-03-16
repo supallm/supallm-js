@@ -1,11 +1,11 @@
-import { initSupallm } from "supallm";
+import { initSupallm } from "supallm/server";
 
 const supallm = initSupallm({
-  projectUrl: "http://localhost:3001/3ac02582-79ae-40fe-92b0-26e72383a564",
-  publicKey: "public-key",
+  projectId: "project-id",
+  secretKey: "secret-key",
 });
 
-supallm.setAccessToken("access-token");
+supallm.setUserToken("access-token");
 
 /**
  * Subscribe to the flow result to get the result streams as they come in
@@ -14,7 +14,7 @@ const result = supallm
   .runFlow({
     flowId: "f641cf81-5f51-4da9-b08a-504f15834351",
     inputs: {
-      prompt: "Write a short story about a cat"
+      prompt: "Write a short story about a cat",
     },
   })
   .subscribe();

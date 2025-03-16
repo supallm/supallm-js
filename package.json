@@ -14,13 +14,32 @@
     "build": "npx rollup -c",
     "buildpack": "npm run build && npm pack"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/server.js",
+  "browser": "dist/browser.js",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "require": "./dist/server.js",
+      "import": "./dist/server.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "require": "./dist/server.js",
+      "import": "./dist/server.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "require": "./dist/browser.js",
+      "import": "./dist/browser.js"
+    }
+  },
+  "module": "dist/server.js",
+  "types": "dist/server.d.ts",
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@semantic-release/github": "^11.0.1",
     "@semantic-release/npm": "^12.0.1",
+    "@types/node": "^22.13.10",
     "prettier": "3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "rollup": "^4.35.0",
@@ -33,6 +52,8 @@
   },
   "dependencies": {
     "eventsource": "^3.0.5",
-    "nanoevents": "^9.1.0"
+    "nanoevents": "^9.1.0",
+    "node-fetch": "^3.3.2",
+    "uuid": "^11.1.0"
   }
 }

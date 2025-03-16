@@ -1,4 +1,7 @@
-import { EventSource } from "eventsource";
+import { v4 as uuidv4 } from "uuid";
+
+import { EventSource, FetchLikeResponse } from "eventsource";
+import fetch from "node-fetch";
 import {
   SSEClient,
   SSEClientEventType,
@@ -6,38 +9,40 @@ import {
 } from "../core/interfaces";
 
 type BackendDataEvent = {
-  type: 'NODE_RESULT',
+  type: "NODE_RESULT";
   workflowId: string;
   triggerId: string;
   sessionId: string;
   data: {
     data: string;
     nodeId: string;
-    nodeType: 'llm' | 'result' | 'entrypoint';
+    nodeType: "llm" | "result" | "entrypoint";
     outputField: string;
-    type: 'string' | 'image';
-  }
-}
+    type: "string" | "image";
+  };
+};
 
 const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
   return (
-    typeof event === 'object' &&
+    typeof event === "object" &&
     event !== null &&
-    event.type === 'NODE_RESULT' &&
-    typeof event.workflowId === 'string' &&
-    typeof event.triggerId === 'string' &&
-    typeof event.sessionId === 'string' &&
-    typeof event.data === 'object' &&
+    event.type === "NODE_RESULT" &&
+    typeof event.workflowId === "string" &&
+    typeof event.triggerId === "string" &&
+    typeof event.sessionId === "string" &&
+    typeof event.data === "object" &&
     event.data !== null &&
-    typeof event.data.data === 'string' &&
-    typeof event.data.nodeId === 'string' &&
-    (event.data.nodeType === 'llm' || event.data.nodeType === 'result' || event.data.nodeType === 'entrypoint') &&
-    typeof event.data.outputField === 'string' &&
-    (event.data.type === 'string' || event.data.type === 'image')
+    typeof event.data.data === "string" &&
+    typeof event.data.nodeId === "string" &&
+    (event.data.nodeType === "llm" ||
+      event.data.nodeType === "result" ||
+      event.data.nodeType === "entrypoint") &&
+    typeof event.data.outputField === "string" &&
+    (event.data.type === "string" || event.data.type === "image")
   );
-}
+};
 
-export class SupallmSSEClient implements SSEClient {  
+export class SupallmServerSSEClient implements SSEClient {
   private baseUrl: string;
   private projectId: string;
 
@@ -46,10 +51,9 @@ export class SupallmSSEClient implements SSEClient {
       apiUrl: string;
       projectId: string;
       flowId: string;
-      externalAccessToken: string | null;
-      publicKey: string;
+      apiKey: string;
       inputs: Record<string, string | number | boolean>;
-    }
+    },
   ) {
     this.baseUrl = config.apiUrl;
     this.projectId = config.projectId;
@@ -57,10 +61,6 @@ export class SupallmSSEClient implements SSEClient {
 
   get workflowId() {
     return this.config.flowId;
-  }
-
-  get externalAccessToken() {
-    return this.config.externalAccessToken;
   }
 
   private events: {
@@ -83,45 +83,66 @@ export class SupallmSSEClient implements SSEClient {
     return `${this.baseUrl}/projects/${this.projectId}/workflows/${this.workflowId}/trigger`;
   }
 
-  private buildListenUrl(subscriptionId: string) {
-    return `${this.baseUrl}/projects/${this.projectId}/workflows/${this.workflowId}/listen/${subscriptionId}`;
+  private buildListenUrl(triggerId: string) {
+    return `${this.baseUrl}/projects/${this.projectId}/workflows/${this.workflowId}/listen/${triggerId}`;
   }
 
-  async triggerFlow(): Promise<{ sessionId: string }> {
+  public generateTriggerId() {
+    return uuidv4();
+  }
+
+  private getAuthHeaders() {
+    return {
+      "X-Secret-Key": this.config.apiKey,
+    };
+  }
+
+  private getHeaders() {
+    return {
+      ...this.getAuthHeaders(),
+      "Content-Type": "application/json",
+    };
+  }
+
+  async triggerFlow(triggerId: string) {
     const url = this.buildTriggerUrl();
-    
+
     const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.externalAccessToken}`,
-        'Content-Type': 'application/json',
-      },
+      method: "POST",
+      headers: this.getHeaders(),
       body: JSON.stringify({
         inputs: this.config.inputs,
+        triggerId,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to trigger flow. Error status: ${response.status}`);
+      throw new Error(
+        `Failed to trigger flow. Error status: ${response.status}`,
+      );
+    }
+
+    await response.json();
   }
 
-    const { id } = await response.json() as { id: string };
+  async listenFlow(triggerId: string) {
+    const url = this.buildListenUrl(triggerId);
 
-    return { sessionId: id };
-  }
-
-  async listenFlow(subscriptionId: string) {
-    const url = this.buildListenUrl(subscriptionId);
-
-    const es = new EventSource(url);
+    const es = new EventSource(url, {
+      fetch: (input, init) => {
+        return fetch(input, {
+          ...init,
+          headers: this.getHeaders(),
+        }) as Promise<FetchLikeResponse>;
+      },
+    });
 
     es.addEventListener("data", (event) => {
       const result = JSON.parse(event.data);
 
       const isBackendDataEvent = IsBackendDataEvent(result);
-      
+
       if (!isBackendDataEvent) {
-        // throw new Error(`Received unrecognized event ${event.data}`);
         console.warn("Received unrecognized event", event.data);
         return;
       }
@@ -129,14 +150,17 @@ export class SupallmSSEClient implements SSEClient {
       this.triggerEvent("data", {
         fieldName: result.data.outputField,
         value: result.data.data,
-        type: result.data.type === 'image' ? 'image' : 'text',
+        type: result.data.type === "image" ? "image" : "text",
         workflowId: result.workflowId,
         nodeId: result.data.nodeId,
       });
     });
 
     es.addEventListener("error", () => {
-      this.triggerEvent("error", new Error('An error occurred while listening to the flow.'));
+      this.triggerEvent(
+        "error",
+        new Error("An error occurred while listening to the flow."),
+      );
     });
 
     es.addEventListener("complete", () => {

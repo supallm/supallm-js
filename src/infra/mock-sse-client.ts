@@ -23,26 +23,26 @@ export class MockSSEClient implements SSEClient {
   }[] = [];
 
   constructor() {
-    this.streamText(veryLongText)
+    this.streamText(veryLongText);
   }
 
   private streamText(text: string) {
     let index = 0;
-    
+
     function getRandomChunkSize() {
       return Math.floor(Math.random() * 3) + 2;
     }
-    
+
     function getRandomDelay() {
       return Math.floor(Math.random() * 51) + 50;
     }
-    
+
     const sendNextChunk = () => {
       if (index < text.length) {
         const chunkSize = getRandomChunkSize();
         const chunk = text.slice(index, index + chunkSize);
         index += chunkSize;
-        
+
         this.triggerEvent("data", {
           fieldName: "result",
           value: chunk,
@@ -50,16 +50,15 @@ export class MockSSEClient implements SSEClient {
           workflowId: "123",
           nodeId: "123",
         });
-        
+
         setTimeout(sendNextChunk.bind(this), getRandomDelay());
       } else {
         this.triggerEvent("complete", undefined);
       }
-    }
-    
+    };
+
     sendNextChunk.call(this);
   }
-  
 
   private triggerEvent<K extends SSEClientEventType>(
     event: K,
@@ -72,8 +71,12 @@ export class MockSSEClient implements SSEClient {
     }
   }
 
-  triggerFlow(): Promise<{ sessionId: string }> {
-    return Promise.resolve({ sessionId: "123" });
+  generateTriggerId(): string {
+    return crypto.randomUUID();
+  }
+
+  triggerFlow(): Promise<void> {
+    return Promise.resolve();
   }
 
   listenFlow(sessionId: string): void {

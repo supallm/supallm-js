@@ -27,18 +27,23 @@ export interface FlowEvent {
 export type CreateFlowResponseParams = {
   projectId: string;
   apiUrl: string;
-  publicKey: string;
-  externalAccessToken: string | null;
+  apiKey?: string | undefined;
+  userToken?: string | undefined;
   flowId: string;
   inputs: Record<string, string | number | boolean>;
+  origin: "dashboard" | "default";
 };
 
 export interface FlowResponseFactory {
   create(params: CreateFlowResponseParams): FlowResponse;
 }
 
-export interface FlowSubscription{
-  on<K extends keyof FlowEvent>(this: this, event: K, cb: FlowEvent[K]): Unsubscribe
+export interface FlowSubscription {
+  on<K extends keyof FlowEvent>(
+    this: this,
+    event: K,
+    cb: FlowEvent[K],
+  ): Unsubscribe;
 }
 
 type FlowResponseStatus = "pending" | "running" | "complete" | "error";
@@ -107,9 +112,9 @@ export class FlowResponse {
       this.onEnd();
     });
 
-    const { sessionId } = await this.sseClient.triggerFlow();
-
-    this.sseClient.listenFlow(sessionId);
+    const triggerId = this.sseClient.generateTriggerId();
+    this.sseClient.listenFlow(triggerId);
+    await this.sseClient.triggerFlow(triggerId);
   }
 
   public subscribe(): FlowSubscription {

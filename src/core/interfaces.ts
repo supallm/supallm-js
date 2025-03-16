@@ -30,8 +30,9 @@ export interface SSEEventDataMap {
 }
 
 export interface SSEClient {
-  triggerFlow(): Promise<{ sessionId: string }>;
-  listenFlow(sessionId: string): void;
+  generateTriggerId(): string;
+  triggerFlow(triggerId: string): Promise<void>;
+  listenFlow(triggerId: string): void;
   addEventListener<K extends SSEClientEventType>(
     event: K,
     callback: (data: SSEEventDataMap[K]) => void,
