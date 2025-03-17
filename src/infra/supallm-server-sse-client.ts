@@ -18,7 +18,7 @@ type BackendDataEvent = {
     nodeId: string;
     nodeType: "llm" | "result" | "entrypoint";
     outputField: string;
-    type: "string" | "image";
+    type: "text" | "image";
   };
 };
 
@@ -38,7 +38,7 @@ const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
       event.data.nodeType === "result" ||
       event.data.nodeType === "entrypoint") &&
     typeof event.data.outputField === "string" &&
-    (event.data.type === "string" || event.data.type === "image")
+    (event.data.type === "text" || event.data.type === "image")
   );
 };
 
@@ -150,7 +150,7 @@ export class SupallmServerSSEClient implements SSEClient {
       this.triggerEvent("data", {
         fieldName: result.data.outputField,
         value: result.data.data,
-        type: result.data.type === "image" ? "image" : "text",
+        type: result.data.type,
         workflowId: result.workflowId,
         nodeId: result.data.nodeId,
       });
