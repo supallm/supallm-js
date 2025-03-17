@@ -6,7 +6,9 @@ import { ensureBrowserOnly } from "./utils";
 
 /**
  * Initializes the Supallm client with the provided parameters.
- * This method is intended to be used server-side since it contains your private key.
+ * This method is intended to be used browser-side only.
+ *
+ * If you want to use it server-side, use `import { initSupallm } from "supallm/server"` instead.
  *
  * @param {Object} params - The parameters for initializing the Supallm client.
  * @param {string} params.projectId - The ID of the Supallm project.
@@ -16,7 +18,6 @@ import { ensureBrowserOnly } from "./utils";
 export const initSupallm = (
   params: {
     projectId: string;
-    secretKey: string;
   },
   options: {
     /**
