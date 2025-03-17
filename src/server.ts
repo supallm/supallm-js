@@ -7,10 +7,18 @@ import { ensureServerOnly } from "./utils";
 /**
  * Initializes the Supallm client with the provided parameters.
  * This method is intended to be used server-side since it contains your private key.
+ * If you want to use it browser-side, use `import { initSupallm } from "supallm/browser"` instead.
  *
  * @param {Object} params - The parameters for initializing the Supallm client.
  * @param {string} params.projectId - The ID of the Supallm project.
  * @param {string} params.secretKey - The secret key for the Supallm project.
+ *
+ * @param {Object} options - The options for initializing the Supallm client.
+ * @param {string} options.apiUrl - The URL where the Supallm backend is hosted. Don't change this value if you are using the cloud version.
+ *
+ * @param {Object} devOptions - You most likely don't need to use this option unless you are developing at Supallm.
+ * @param {boolean} devOptions.mocked - Whether to use mocked data.
+ *
  * @returns {SupallmClient} The initialized Supallm client.
  */
 export const initSupallm = (
@@ -19,16 +27,19 @@ export const initSupallm = (
     secretKey: string;
   },
   options: {
-    mocked: boolean;
     apiUrl: string;
   } = {
     apiUrl: "https://api.supall.com",
+  },
+  devOptions: {
+    mocked: boolean;
+  } = {
     mocked: false,
   },
 ) => {
   let flowResponseFactory: FlowResponseFactory;
 
-  if (options.mocked) {
+  if (devOptions.mocked) {
     flowResponseFactory = new MockFlowResponseFactory();
   } else {
     flowResponseFactory = new SupallmServerFlowResponseFactory();

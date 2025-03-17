@@ -12,7 +12,14 @@ import { ensureBrowserOnly } from "./utils";
  *
  * @param {Object} params - The parameters for initializing the Supallm client.
  * @param {string} params.projectId - The ID of the Supallm project.
- * @param {string} params.secretKey - The secret key for the Supallm project.
+ *
+ * @param {Object} options - The options for initializing the Supallm client.
+ * @param {string} options.apiUrl - The URL where the Supallm backend is hosted. Don't change this value if you are using the cloud version.
+ *
+ * @param {Object} devOptions - You most likely don't need to use this option unless you are developing at Supallm.
+ * @param {boolean} devOptions.mocked - Whether to use mocked data.
+ * @param {string} devOptions.origin - The origin of the Supallm client.
+ *
  * @returns {SupallmClient} The initialized Supallm client.
  */
 export const initSupallm = (
@@ -20,20 +27,8 @@ export const initSupallm = (
     projectId: string;
   },
   options: {
-    /**
-     * The URL where the Supallm backend is hosted.
-     *
-     * If you are using the cloud version, do not change this value.
-     * If you are using the Supallm self-hosted version set this value to http://localhost:3001
-     * If you changed the backend url, set this value to your backend url.
-     *
-     * Default value is https://api.supall.com for the cloud version.
-     */
     apiUrl: string;
   },
-  /**
-   * If you are not developing at Supallm, you most likely don't need to use this option.
-   */
   devOptions: {
     mocked: boolean;
     origin: "dashboard" | "default";
