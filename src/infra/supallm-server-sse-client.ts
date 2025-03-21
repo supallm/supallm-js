@@ -30,15 +30,13 @@ const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
     typeof event.workflowId === "string" &&
     typeof event.triggerId === "string" &&
     typeof event.sessionId === "string" &&
-    typeof event.data === "object" &&
-    event.data !== null &&
-    typeof event.data.data === "string" &&
+    !!event?.data?.data &&
     typeof event.data.nodeId === "string" &&
-    (event.data.nodeType === "llm" ||
-      event.data.nodeType === "result" ||
-      event.data.nodeType === "entrypoint") &&
+    typeof event.data.nodeType === "string" &&
     typeof event.data.outputField === "string" &&
-    (event.data.type === "text" || event.data.type === "image")
+    (event.data.type === "text" ||
+      event.data.type === "image" ||
+      event.data.type === "any")
   );
 };
 

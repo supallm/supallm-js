@@ -27,9 +27,7 @@ const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
     typeof event.workflowId === "string" &&
     typeof event.triggerId === "string" &&
     typeof event.sessionId === "string" &&
-    typeof event.data === "object" &&
-    event.data !== null &&
-    typeof event.data.data === "string" &&
+    !!event?.data?.data &&
     typeof event.data.nodeId === "string" &&
     typeof event.data.nodeType === "string" &&
     typeof event.data.outputField === "string" &&
