@@ -1,7 +1,7 @@
 import { createNanoEvents, Unsubscribe } from "nanoevents";
 import { SSEClient, SSEEventDataMap } from "../core/interfaces";
 
-export type FlowEventDataType = "text" | "image";
+export type FlowEventDataType = "text" | "image" | "any";
 
 export type FlowEventData = {
   fieldName: string;

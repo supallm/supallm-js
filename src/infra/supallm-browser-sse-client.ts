@@ -13,9 +13,9 @@ type BackendDataEvent = {
   data: {
     data: string;
     nodeId: string;
-    nodeType: "llm" | "result" | "entrypoint";
+    nodeType: string;
     outputField: string;
-    type: "text" | "image";
+    type: "text" | "image" | "any";
   };
 };
 
@@ -31,11 +31,11 @@ const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
     event.data !== null &&
     typeof event.data.data === "string" &&
     typeof event.data.nodeId === "string" &&
-    (event.data.nodeType === "llm" ||
-      event.data.nodeType === "result" ||
-      event.data.nodeType === "entrypoint") &&
+    typeof event.data.nodeType === "string" &&
     typeof event.data.outputField === "string" &&
-    (event.data.type === "text" || event.data.type === "image")
+    (event.data.type === "text" ||
+      event.data.type === "image" ||
+      event.data.type === "any")
   );
 };
 

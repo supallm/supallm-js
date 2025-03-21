@@ -23,7 +23,7 @@ export interface SSEEventDataMap {
   data: {
     fieldName: string;
     value: string;
-    type: "image" | "text";
+    type: "image" | "text" | "any";
     workflowId: string;
     nodeId: string;
   };
