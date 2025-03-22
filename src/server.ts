@@ -1,6 +1,5 @@
 import { FlowResponseFactory } from "./core/flow-response";
 import { SupallmServerClient } from "./core/server-client";
-import { MockFlowResponseFactory } from "./infra/mock-flow-response-factory";
 import { SupallmServerFlowResponseFactory } from "./infra/supallm-server-flow-response-factory";
 import { ensureServerOnly } from "./utils";
 
@@ -31,19 +30,10 @@ export const initSupallm = (
   } = {
     apiUrl: "https://api.supall.com",
   },
-  devOptions: {
-    mocked: boolean;
-  } = {
-    mocked: false,
-  },
 ) => {
   let flowResponseFactory: FlowResponseFactory;
 
-  if (devOptions.mocked) {
-    flowResponseFactory = new MockFlowResponseFactory();
-  } else {
-    flowResponseFactory = new SupallmServerFlowResponseFactory();
-  }
+  flowResponseFactory = new SupallmServerFlowResponseFactory();
 
   ensureServerOnly();
 

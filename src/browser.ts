@@ -1,6 +1,5 @@
 import { SupallmBrowserClient } from "./core/browser-client";
 import { FlowResponseFactory } from "./core/flow-response";
-import { MockFlowResponseFactory } from "./infra/mock-flow-response-factory";
 import { SupallmBrowserFlowResponseFactory } from "./infra/supallm-browser-flow-response-factory";
 import { ensureBrowserOnly } from "./utils";
 
@@ -30,20 +29,14 @@ export const initSupallm = (
     apiUrl: string;
   },
   devOptions: {
-    mocked: boolean;
     origin: "dashboard" | "default";
   } = {
-    mocked: false,
     origin: "default",
   },
 ) => {
   let flowResponseFactory: FlowResponseFactory;
 
-  if (devOptions.mocked) {
-    flowResponseFactory = new MockFlowResponseFactory();
-  } else {
-    flowResponseFactory = new SupallmBrowserFlowResponseFactory();
-  }
+  flowResponseFactory = new SupallmBrowserFlowResponseFactory();
 
   ensureBrowserOnly();
 

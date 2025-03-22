@@ -113,8 +113,13 @@ export class FlowResponse {
     });
 
     const triggerId = this.sseClient.generateTriggerId();
-    this.sseClient.listenFlow(triggerId);
-    await this.sseClient.triggerFlow(triggerId);
+    const unsubscribe = await this.sseClient.listenFlow(triggerId);
+    const triggerResult = await this.sseClient.triggerFlow(triggerId);
+
+    if (triggerResult.isError()) {
+      unsubscribe();
+      throw triggerResult.error;
+    }
   }
 
   public subscribe(): FlowSubscription {

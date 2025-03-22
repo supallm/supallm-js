@@ -54,6 +54,7 @@
     "eventsource": "^3.0.5",
     "nanoevents": "^9.1.0",
     "node-fetch": "^3.3.2",
+    "typescript-result": "^3.1.1",
     "uuid": "^11.1.0"
   }
 }

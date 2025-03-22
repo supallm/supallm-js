@@ -1,3 +1,6 @@
+import { Result } from "typescript-result";
+import { TriggerFlowError } from "./errors/trigger-flow.errors";
+
 export type SSEEventData = {
   fieldName: string;
   value: string;
@@ -18,7 +21,7 @@ export type TriggerFlowParams = {
 export type SSEClientEventType = "complete" | "error" | "data";
 
 export interface SSEEventDataMap {
-  complete: void;
+  complete: { status: "success" | "error" };
   error: { message: string };
   data: {
     fieldName: string;
@@ -29,10 +32,14 @@ export interface SSEEventDataMap {
   };
 }
 
+export interface Unsubscribe {
+  (): void;
+}
+
 export interface SSEClient {
   generateTriggerId(): string;
-  triggerFlow(triggerId: string): Promise<void>;
-  listenFlow(triggerId: string): void;
+  triggerFlow(triggerId: string): Promise<Result<void, TriggerFlowError>>;
+  listenFlow(triggerId: string): Promise<Unsubscribe>;
   addEventListener<K extends SSEClientEventType>(
     event: K,
     callback: (data: SSEEventDataMap[K]) => void,

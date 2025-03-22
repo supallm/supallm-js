@@ -2,6 +2,11 @@ import { v4 as uuidv4 } from "uuid";
 
 import { EventSource, FetchLikeResponse } from "eventsource";
 import fetch from "node-fetch";
+import { Result } from "typescript-result";
+import {
+  HttpFailureError,
+  InvalidFlowError,
+} from "../core/errors/trigger-flow.errors";
 import {
   SSEClient,
   SSEClientEventType,
@@ -37,6 +42,22 @@ const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
     (event.data.type === "text" ||
       event.data.type === "image" ||
       event.data.type === "any")
+  );
+};
+
+type BackendCompleteEvent = {
+  type: "WORKFLOW_FAILED" | "WORKFLOW_COMPLETED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+};
+
+const IsBackendCompleteEvent = (event: any): event is BackendCompleteEvent => {
+  return (
+    (typeof event === "object" &&
+      event !== null &&
+      event.type === "WORKFLOW_FAILED") ||
+    event.type === "WORKFLOW_COMPLETED"
   );
 };
 
@@ -103,24 +124,34 @@ export class SupallmServerSSEClient implements SSEClient {
   }
 
   async triggerFlow(triggerId: string) {
-    const url = this.buildTriggerUrl();
+    try {
+      const url = this.buildTriggerUrl();
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify({
-        inputs: this.config.inputs,
-        triggerId,
-      }),
-    });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          inputs: this.config.inputs,
+          triggerId,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to trigger flow. Error status: ${response.status}`,
+      if (!response.ok) {
+        return Result.error(
+          new InvalidFlowError("The flow is invalid or does not exist."),
+        );
+      }
+
+      await response.json();
+
+      return Result.ok();
+    } catch (error) {
+      return Result.error(
+        new HttpFailureError(
+          "An unknown error occurred while triggering the flow.",
+        ),
       );
     }
-
-    await response.json();
   }
 
   async listenFlow(triggerId: string) {
@@ -135,7 +166,7 @@ export class SupallmServerSSEClient implements SSEClient {
       },
     });
 
-    es.addEventListener("data", (event) => {
+    const dataEventCallback = (event: MessageEvent) => {
       const result = JSON.parse(event.data);
 
       const isBackendDataEvent = IsBackendDataEvent(result);
@@ -152,19 +183,44 @@ export class SupallmServerSSEClient implements SSEClient {
         workflowId: result.workflowId,
         nodeId: result.data.nodeId,
       });
-    });
+    };
+    es.addEventListener("data", dataEventCallback);
 
-    es.addEventListener("error", () => {
+    const errorEventCallback = () => {
       this.triggerEvent(
         "error",
         new Error("An error occurred while listening to the flow."),
       );
-    });
+    };
+    es.addEventListener("error", errorEventCallback);
 
-    es.addEventListener("complete", () => {
-      this.triggerEvent("complete", undefined);
+    const completeEventCallback = (event: MessageEvent) => {
+      const result = JSON.parse(event.data);
+      const isBackendCompleteEvent = IsBackendCompleteEvent(result);
+
+      if (!isBackendCompleteEvent) {
+        console.warn("Unrecognized complete event received", event.data);
+        return;
+      }
+
+      const status = result.type === "WORKFLOW_FAILED" ? "error" : "success";
+
+      this.triggerEvent("complete", { status });
+
       es.close();
-    });
+      es.removeEventListener("error", errorEventCallback);
+      es.removeEventListener("data", dataEventCallback);
+      es.removeEventListener("complete", completeEventCallback);
+    };
+
+    es.addEventListener("complete", completeEventCallback);
+
+    return () => {
+      es.close();
+      es.removeEventListener("data", dataEventCallback);
+      es.removeEventListener("error", errorEventCallback);
+      es.removeEventListener("complete", completeEventCallback);
+    };
   }
 
   addEventListener<K extends SSEClientEventType>(
