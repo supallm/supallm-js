@@ -98,7 +98,6 @@ const IsBackendErrorEvent = (event: any): event is BackendErrorEvent => {
     event.type === "NODE_FAILED" &&
     typeof event.workflowId === "string" &&
     typeof event.triggerId === "string" &&
-    typeof event.nodeId === "string" &&
     typeof event.data.error === "string" &&
     typeof event.data.nodeId === "string" &&
     typeof event.data.nodeType === "string"
