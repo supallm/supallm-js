@@ -18,19 +18,33 @@ export type TriggerFlowParams = {
   inputs: Record<string, string | number | boolean>;
 };
 
-export type SSEClientEventType = "complete" | "error" | "data";
-
 export interface SSEEventDataMap {
-  complete: { status: "success" | "error" };
-  error: { message: string };
-  data: {
+  flowEnd: {};
+  flowFail: { message: string };
+  flowResultStream: {
     fieldName: string;
     value: string;
     type: "image" | "text" | "any";
     workflowId: string;
     nodeId: string;
   };
+  nodeStart: {
+    nodeId: string;
+  };
+  nodeEnd: {
+    nodeId: string;
+  };
+  nodeFail: {
+    nodeId: string;
+    message: string;
+  };
+  nodeLog: {
+    nodeId: string;
+    content: string;
+  };
 }
+
+export type SSEClientEventType = keyof SSEEventDataMap;
 
 export interface Unsubscribe {
   (): void;

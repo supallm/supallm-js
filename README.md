@@ -48,20 +48,18 @@ npm install supallm
 ### Initialize the SDK
 
 ```ts
-import { initSupallm } from "supallm";
+import { initSupallm } from "supallm/server";
 
 const supallm = initSupallm({
-  projectUrl: "<your-project-url>",
-  publicKey: "<your-public-key>",
+  projectId: "<your-project-id>",
+  secretKey: "<your-secret-key>",
 });
-
-supallm.setAccessToken("<your-access-token>");
 ```
 
 ### Trigger a flow and listen for events
 
 ```ts
-const result = supallm
+const sub = supallm
   .runFlow({
     flowId: "<your-flow-id>",
     inputs: {
@@ -70,19 +68,39 @@ const result = supallm
   })
   .subscribe();
 
-result.on("complete", (event) => {
-  console.log("complete:", event);
+sub.on("flowResultStream", (event) => {
+  console.log("Partial result receieved", event);
 });
 
-result.on("data", (event) => {
-  console.log("data:", event);
+result.on("flowEnd", (event) => {
+  console.log("Final concatenated result:", event.result);
+});
+
+result.on("flowFail", (event) => {
+  console.error("An error occurred while running the flow:", event.message);
+});
+
+result.on("nodeStart", (event) => {
+  console.log("Node started:", event);
+});
+
+result.on("nodeFail", (event) => {
+  console.error("An error occurred while running the node:", event);
+});
+
+result.on("nodeLog", (event) => {
+  console.log("Node log:", event);
+});
+
+result.on("nodeEnd", (event) => {
+  console.log("Node ended:", event);
 });
 ```
 
 ### Trigger a flow and wait for the result
 
 ```ts
-const result = await supallm
+const response = await supallm
   .runFlow({
     flowId: "<your-flow-id>",
     inputs: {
@@ -90,6 +108,15 @@ const result = await supallm
     },
   })
   .wait();
+
+if (response.isSuccess) {
+  console.log("result:", response.result);
+} else {
+  console.error(
+    "An error occurred while running the flow:",
+    response.result.message,
+  );
+}
 
 console.log("result:", result);
 ```

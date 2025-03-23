@@ -48,12 +48,19 @@ export const initSupallm = (
 };
 
 export type {
+  FlowAwaitedResponse,
+  FlowEndEvent,
   FlowEvent,
-  FlowEventData,
-  FlowEventDataType,
+  FlowFailEvent,
   FlowResponse,
   FlowResult,
+  FlowResultStreamEvent,
+  FlowResultValueType,
   FlowSubscription,
+  NodeEndEvent,
+  NodeFailEvent,
+  NodeLogEvent,
+  NodeStartEvent,
 } from "./core/flow-response";
 
 export type { Unsubscribe } from "nanoevents";
