@@ -28,6 +28,7 @@ export interface SSEEventDataMap {
     workflowId: string;
     nodeId: string;
   };
+  flowStart: {};
   nodeStart: {
     nodeId: string;
   };

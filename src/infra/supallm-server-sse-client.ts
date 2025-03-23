@@ -62,7 +62,7 @@ const IsBackendCompleteEvent = (event: any): event is BackendCompleteEvent => {
 };
 
 type BackendWorkflowEvent = {
-  type: "NODE_STARTED" | "NODE_COMPLETED";
+  type: "NODE_STARTED" | "NODE_COMPLETED" | "WORKFLOW_STARTED";
   workflowId: string;
   triggerId: string;
   sessionId: string;
@@ -75,7 +75,9 @@ const IsBackendWorkflowEvent = (event: any): event is BackendWorkflowEvent => {
   return (
     typeof event === "object" &&
     event !== null &&
-    (event.type === "NODE_STARTED" || event.type === "NODE_COMPLETED") &&
+    (event.type === "NODE_STARTED" ||
+      event.type === "NODE_COMPLETED" ||
+      event.type === "WORKFLOW_STARTED") &&
     typeof event.workflowId === "string"
   );
 };
@@ -241,14 +243,21 @@ export class SupallmServerSSEClient implements SSEClient {
         return;
       }
 
-      if (result.type === "NODE_STARTED") {
-        this.triggerEvent("nodeStart", {
-          nodeId: result.data.nodeId,
-        });
-      } else {
-        this.triggerEvent("nodeEnd", { nodeId: result.data.nodeId });
+      switch (result.type) {
+        case "NODE_STARTED":
+          this.triggerEvent("nodeStart", {
+            nodeId: result.data.nodeId,
+          });
+          break;
+        case "NODE_COMPLETED":
+          this.triggerEvent("nodeEnd", { nodeId: result.data.nodeId });
+          break;
+        case "WORKFLOW_STARTED":
+          this.triggerEvent("flowStart", {});
+          break;
       }
     };
+
     es.addEventListener("workflow", workflowEventCallback);
 
     const errorEventCallback = (event: MessageEvent) => {

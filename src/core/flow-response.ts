@@ -45,6 +45,7 @@ export type NodeLogEvent = {
 };
 
 export interface FlowEvent {
+  flowStart: (event: {}) => void;
   flowResultStream: (event: FlowResultStreamEvent) => void;
   flowFail: (event: FlowFailEvent) => void;
   flowEnd: (event: FlowEndEvent) => void;
@@ -118,9 +119,12 @@ export class FlowResponse {
     }
   }
 
-  private onFlowResult(data: SSEEventDataMap["flowResultStream"]) {
-    this.status = "running";
+  private onFlowStart() {
+    this.updateStatus("running");
+    this.emitter.emit("flowStart", {});
+  }
 
+  private onFlowResult(data: SSEEventDataMap["flowResultStream"]) {
     this.emitter.emit("flowResultStream", {
       fieldName: data.fieldName,
       value: data.value,
@@ -172,6 +176,9 @@ export class FlowResponse {
   }
 
   private async startSSE() {
+    this.sseClient.addEventListener("flowStart", () => {
+      this.onFlowStart();
+    });
     this.sseClient.addEventListener("flowResultStream", (event) => {
       this.onFlowResult(event);
     });
