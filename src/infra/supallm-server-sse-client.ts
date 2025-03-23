@@ -275,6 +275,7 @@ export class SupallmServerSSEClient implements SSEClient {
         message: result.data.error,
       });
     };
+    es.addEventListener("error", errorEventCallback);
 
     const removeAllListeners = (es: EventSource) => {
       es.removeEventListener("data", dataEventCallback);

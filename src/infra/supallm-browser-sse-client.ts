@@ -286,9 +286,11 @@ export class SupallmBrowserSSEClient implements SSEClient {
         message: result.data.error,
       });
     };
+    es.addEventListener("error", errorEventCallback);
 
     const removeAllListeners = (es: EventSource) => {
       es.removeEventListener("data", dataEventCallback);
+      es.removeEventListener("error", errorEventCallback);
       es.removeEventListener("workflow", workflowEventCallback);
     };
 
