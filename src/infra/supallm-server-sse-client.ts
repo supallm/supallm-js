@@ -66,7 +66,9 @@ type BackendWorkflowEvent = {
   workflowId: string;
   triggerId: string;
   sessionId: string;
-  nodeId: string;
+  data: {
+    nodeId: string;
+  };
 };
 
 const IsBackendWorkflowEvent = (event: any): event is BackendWorkflowEvent => {
@@ -241,10 +243,10 @@ export class SupallmServerSSEClient implements SSEClient {
 
       if (result.type === "NODE_STARTED") {
         this.triggerEvent("nodeStart", {
-          nodeId: result.nodeId,
+          nodeId: result.data.nodeId,
         });
       } else {
-        this.triggerEvent("nodeEnd", { nodeId: result.nodeId });
+        this.triggerEvent("nodeEnd", { nodeId: result.data.nodeId });
       }
     };
     es.addEventListener("workflow", workflowEventCallback);
