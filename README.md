@@ -45,23 +45,47 @@ Before you start, make sure you have a Supallm instance running and a flow creat
 npm install supallm
 ```
 
-### Initialize the SDK
+### Server VS Browser
+
+Our SDK package contains both a browser and a server version.
+
+The main difference between the two is how you will authenticate your requests and what information you will have access to.
+
+For instance, the browser version is designed to be exposed to the client side, it will not have access to the `secretKey`.
+
+The backend version is imported by default when you use the `import { initSupallm } from "supallm"` statement.
+
+To import the frontend version, you can use `import { initSupallm } from "supallm/browser"` statement.
+
+### Server Version
 
 ```ts
-import { initSupallm } from "supallm";
+import { initSupallm } from "supallm/server";
 
 const supallm = initSupallm({
-  projectUrl: "<your-project-url>",
-  publicKey: "<your-public-key>",
+  projectId: "<your-project-id>",
+  secretKey: "<your-secret-key>",
+});
+```
+
+### Browser Version
+
+```ts
+import { initSupallm } from "supallm/browser";
+
+const supallm = initSupallm({
+  projectId: "<your-project-id>",
 });
 
-supallm.setAccessToken("<your-access-token>");
+// Set the user token to authenticate your requests
+// Note: this requires to configure the Supallm authentication feature from your dashboard.
+supallm.setUserToken("<your-user-token>");
 ```
 
 ### Trigger a flow and listen for events
 
 ```ts
-const result = supallm
+const sub = supallm
   .runFlow({
     flowId: "<your-flow-id>",
     inputs: {
@@ -70,19 +94,39 @@ const result = supallm
   })
   .subscribe();
 
-result.on("complete", (event) => {
-  console.log("complete:", event);
+sub.on("flowResultStream", (event) => {
+  console.log("Partial result receieved", event);
 });
 
-result.on("data", (event) => {
-  console.log("data:", event);
+result.on("flowEnd", (event) => {
+  console.log("Final concatenated result:", event.result);
+});
+
+result.on("flowFail", (event) => {
+  console.error("An error occurred while running the flow:", event.message);
+});
+
+result.on("nodeStart", (event) => {
+  console.log("Node started:", event);
+});
+
+result.on("nodeFail", (event) => {
+  console.error("An error occurred while running the node:", event);
+});
+
+result.on("nodeLog", (event) => {
+  console.log("Node log:", event);
+});
+
+result.on("nodeEnd", (event) => {
+  console.log("Node ended:", event);
 });
 ```
 
 ### Trigger a flow and wait for the result
 
 ```ts
-const result = await supallm
+const response = await supallm
   .runFlow({
     flowId: "<your-flow-id>",
     inputs: {
@@ -90,6 +134,15 @@ const result = await supallm
     },
   })
   .wait();
+
+if (response.isSuccess) {
+  console.log("result:", response.result);
+} else {
+  console.error(
+    "An error occurred while running the flow:",
+    response.result.message,
+  );
+}
 
 console.log("result:", result);
 ```

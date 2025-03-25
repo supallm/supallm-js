@@ -5,29 +5,13 @@ export type RunFlowParams = {
   inputs: Record<string, string | number | boolean>;
 };
 
-export class SupallmClient {
-  private externalAccessToken: string | null = null;
-
+export class SupallmServerClient {
   constructor(
-    private readonly projectUrl: string,
-    private readonly publicKey: string,
+    private readonly projectId: string,
+    private readonly secretKey: string,
+    private readonly apiUrl: string,
     private flowResponseFactory: FlowResponseFactory,
   ) {}
-
-  /**
-   * This method allows to authenticate your requests to Supallm
-   * using your current authentication provider.
-   *
-   * @remarks
-   * To use this method, you need to have connected your authentication provider to Supallm
-   * from your Supallm dashboard.
-   *
-   * We support various providers such as Supabase.
-   * @param accessToken
-   */
-  setAccessToken(accessToken: string) {
-    this.externalAccessToken = accessToken;
-  }
 
   /**
    /**
@@ -70,11 +54,12 @@ export class SupallmClient {
    */
   runFlow(params: RunFlowParams) {
     return this.flowResponseFactory.create({
-      projectUrl: this.projectUrl,
-      publicKey: this.publicKey,
-      externalAccessToken: this.externalAccessToken,
+      apiUrl: this.apiUrl,
+      projectId: this.projectId,
+      apiKey: this.secretKey,
       flowId: params.flowId,
       inputs: params.inputs,
+      origin: "default",
     });
   }
 }
