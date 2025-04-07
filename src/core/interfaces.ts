@@ -41,7 +41,27 @@ export interface SSEEventDataMap {
   };
   nodeLog: {
     nodeId: string;
-    content: string;
+    nodeType: string;
+    message: string;
+  };
+  toolStart: {
+    nodeId: string;
+    agentName: string;
+  };
+  toolEnd: {
+    nodeId: string;
+    agentName: string;
+  };
+  toolFail: {
+    nodeId: string;
+    agentName: string;
+  };
+  agentNotification: {
+    nodeId: string;
+    nodeType: string;
+    type: string;
+    outputField: string;
+    data: string;
   };
 }
 
@@ -53,9 +73,17 @@ export interface Unsubscribe {
 
 export interface SSEClient {
   generateTriggerId(): string;
-  triggerFlow(triggerId: string, sessionId?: string): Promise<Result<{
-    sessionId: string;
-  }, TriggerFlowError>>;
+  triggerFlow(
+    triggerId: string,
+    sessionId?: string,
+  ): Promise<
+    Result<
+      {
+        sessionId: string;
+      },
+      TriggerFlowError
+    >
+  >;
   listenFlow(triggerId: string): Promise<Unsubscribe>;
   addEventListener<K extends SSEClientEventType>(
     event: K,

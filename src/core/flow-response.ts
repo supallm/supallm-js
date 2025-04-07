@@ -41,7 +41,30 @@ export type NodeFailEvent = {
 
 export type NodeLogEvent = {
   nodeId: string;
-  content: string;
+  message: string;
+};
+
+export type ToolStartEvent = {
+  nodeId: string;
+  agentName: string;
+};
+
+export type ToolEndEvent = {
+  nodeId: string;
+  agentName: string;
+};
+
+export type ToolFailEvent = {
+  nodeId: string;
+  agentName: string;
+};
+
+export type AgentNotificationEvent = {
+  nodeId: string;
+  nodeType: string;
+  type: string;
+  outputField: string;
+  data: string;
 };
 
 export interface FlowEvent {
@@ -53,6 +76,10 @@ export interface FlowEvent {
   nodeEnd: (event: NodeEndEvent) => void;
   nodeFail: (event: NodeFailEvent) => void;
   nodeLog: (event: NodeLogEvent) => void;
+  toolStart: (event: ToolStartEvent) => void;
+  toolEnd: (event: ToolEndEvent) => void;
+  toolFail: (event: ToolFailEvent) => void;
+  agentNotification: (event: AgentNotificationEvent) => void;
 }
 
 export type FlowAwaitedResponse =
@@ -172,10 +199,47 @@ export class FlowResponse {
     });
   }
 
-  private onNodeLog(nodeId: string, content: string) {
+  private onNodeLog(nodeId: string, message: string) {
     this.emitter.emit("nodeLog", {
       nodeId,
-      content,
+      message,
+    });
+  }
+
+  private onToolStart(nodeId: string, agentName: string) {
+    this.emitter.emit("toolStart", {
+      nodeId,
+      agentName,
+    });
+  }
+
+  private onToolEnd(nodeId: string, agentName: string) {
+    this.emitter.emit("toolEnd", {
+      nodeId,
+      agentName,
+    });
+  }
+
+  private onToolFail(nodeId: string, agentName: string) {
+    this.emitter.emit("toolFail", {
+      nodeId,
+      agentName,
+    });
+  }
+
+  private onAgentNotification(
+    nodeId: string,
+    nodeType: string,
+    type: string,
+    outputField: string,
+    data: string,
+  ) {
+    this.emitter.emit("agentNotification", {
+      nodeId,
+      nodeType,
+      type,
+      outputField,
+      data,
     });
   }
 
@@ -183,35 +247,63 @@ export class FlowResponse {
     this.sseClient.addEventListener("flowStart", () => {
       this.onFlowStart();
     });
+
     this.sseClient.addEventListener("flowResultStream", (event) => {
       this.onFlowResult(event);
     });
+
     this.sseClient.addEventListener("flowFail", (event) => {
       this.onFlowFail(event);
     });
+
     this.sseClient.addEventListener("flowEnd", () => {
       this.onEnd();
     });
+
     this.sseClient.addEventListener("nodeStart", (event) => {
       this.onNodeStart(event.nodeId);
     });
+
     this.sseClient.addEventListener("nodeEnd", (event) => {
       this.onNodeEnd(event.nodeId);
     });
+
     this.sseClient.addEventListener("nodeFail", (event) => {
       this.onNodeFail(event.nodeId, event.message);
     });
+
     this.sseClient.addEventListener("nodeLog", (event) => {
-      this.onNodeLog(event.nodeId, event.content);
+      this.onNodeLog(event.nodeId, event.message);
+    });
+
+    this.sseClient.addEventListener("toolStart", (event) => {
+      this.onToolStart(event.nodeId, event.agentName);
+    });
+
+    this.sseClient.addEventListener("toolEnd", (event) => {
+      this.onToolEnd(event.nodeId, event.agentName);
+    });
+
+    this.sseClient.addEventListener("toolFail", (event) => {
+      this.onToolFail(event.nodeId, event.agentName);
+    });
+
+    this.sseClient.addEventListener("agentNotification", (event) => {
+      this.onAgentNotification(
+        event.nodeId,
+        event.nodeType,
+        event.type,
+        event.outputField,
+        event.data,
+      );
     });
 
     const triggerId = this.sseClient.generateTriggerId();
-
     const unsubscribe = await this.sseClient.listenFlow(triggerId);
 
     const triggerResult = await this.sseClient.triggerFlow(
       triggerId,
-      this._sessionId
+      this._sessionId,
     );
 
     const [result, error] = triggerResult.toTuple();
@@ -223,13 +315,14 @@ export class FlowResponse {
 
     this._sessionId = result.sessionId;
 
-    return { sessionId: this._sessionId }
-
+    return { sessionId: this._sessionId };
   }
 
   public get sessionId() {
     if (!this._sessionId) {
-      throw new Error("Session ID is not set. Please use the run method before calling this getter.");
+      throw new Error(
+        "Session ID is not set. Please use the run method before calling this getter.",
+      );
     }
 
     return this._sessionId;

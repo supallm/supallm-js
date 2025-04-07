@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { EventSource, FetchLikeResponse } from "eventsource";
 import fetch from "node-fetch";
-import { Result } from "typescript-result";
+import { assertUnreachable, Result } from "typescript-result";
 import {
   HttpFailureError,
   InvalidFlowError,
@@ -12,8 +12,56 @@ import {
   SSEClientEventType,
   SSEEventDataMap,
 } from "../core/interfaces";
+const DataEventTypes = [
+  "NODE_STARTED",
+  "NODE_COMPLETED",
+  "NODE_FAILED",
+  "NODE_RESULT",
+  "WORKFLOW_STARTED",
+  "WORKFLOW_COMPLETED",
+  "WORKFLOW_FAILED",
+  "TOOL_STARTED",
+  "TOOL_COMPLETED",
+  "TOOL_FAILED",
+  "AGENT_NOTIFICATION",
+  "NODE_LOG",
+] as const;
 
-type BackendDataEvent = {
+export type DataEventType = (typeof DataEventTypes)[number];
+
+type NodeStartedEvent = {
+  type: "NODE_STARTED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    nodeId: string;
+  };
+};
+
+type NodeCompletedEvent = {
+  type: "NODE_COMPLETED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    nodeId: string;
+  };
+};
+
+type NodeFailedEvent = {
+  type: "NODE_FAILED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    error: string;
+    nodeId: string;
+    nodeType: string;
+  };
+};
+
+type NodeResultEvent = {
   type: "NODE_RESULT";
   workflowId: string;
   triggerId: string;
@@ -27,84 +75,101 @@ type BackendDataEvent = {
   };
 };
 
-const IsBackendDataEvent = (event: any): event is BackendDataEvent => {
-  return (
-    typeof event === "object" &&
-    event !== null &&
-    event.type === "NODE_RESULT" &&
-    typeof event.workflowId === "string" &&
-    typeof event.triggerId === "string" &&
-    typeof event.sessionId === "string" &&
-    !!event?.data?.data &&
-    typeof event.data.nodeId === "string" &&
-    typeof event.data.nodeType === "string" &&
-    typeof event.data.outputField === "string" &&
-    (event.data.type === "text" ||
-      event.data.type === "image" ||
-      event.data.type === "any")
-  );
-};
-
-type BackendCompleteEvent = {
-  type: "WORKFLOW_FAILED" | "WORKFLOW_COMPLETED";
+type WorkflowStartedEvent = {
+  type: "WORKFLOW_STARTED";
   workflowId: string;
   triggerId: string;
   sessionId: string;
 };
 
-const IsBackendCompleteEvent = (event: any): event is BackendCompleteEvent => {
-  return (
-    (typeof event === "object" &&
-      event !== null &&
-      event.type === "WORKFLOW_FAILED") ||
-    event.type === "WORKFLOW_COMPLETED"
-  );
+type WorkflowFailedEvent = {
+  type: "WORKFLOW_FAILED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
 };
 
-type BackendWorkflowEvent = {
-  type: "NODE_STARTED" | "NODE_COMPLETED" | "WORKFLOW_STARTED";
+type WorkflowCompletedEvent = {
+  type: "WORKFLOW_COMPLETED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+};
+
+type ToolStartedEvent = {
+  type: "TOOL_STARTED";
   workflowId: string;
   triggerId: string;
   sessionId: string;
   data: {
     nodeId: string;
+    agentName: string;
   };
 };
 
-const IsBackendWorkflowEvent = (event: any): event is BackendWorkflowEvent => {
-  return (
-    typeof event === "object" &&
-    event !== null &&
-    (event.type === "NODE_STARTED" ||
-      event.type === "NODE_COMPLETED" ||
-      event.type === "WORKFLOW_STARTED") &&
-    typeof event.workflowId === "string"
-  );
-};
-
-type BackendErrorEvent = {
-  type: "NODE_FAILED";
+type ToolCompletedEvent = {
+  type: "TOOL_COMPLETED";
   workflowId: string;
   triggerId: string;
-  nodeId: string;
   data: {
-    error: string;
+    nodeId: string;
+    agentName: string;
+  };
+};
+
+type ToolFailedEvent = {
+  type: "TOOL_FAILED";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    nodeId: string;
+    agentName: string;
+  };
+};
+
+type AgentNotificationEvent = {
+  type: "AGENT_NOTIFICATION";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    data: string;
     nodeId: string;
     nodeType: string;
+    type: "any";
+    outputField: string;
   };
 };
 
-const IsBackendErrorEvent = (event: any): event is BackendErrorEvent => {
-  return (
-    typeof event === "object" &&
-    event !== null &&
-    event.type === "NODE_FAILED" &&
-    typeof event.workflowId === "string" &&
-    typeof event.triggerId === "string" &&
-    typeof event.data.error === "string" &&
-    typeof event.data.nodeId === "string" &&
-    typeof event.data.nodeType === "string"
-  );
+type NodeLogEvent = {
+  type: "NODE_LOG";
+  workflowId: string;
+  triggerId: string;
+  sessionId: string;
+  data: {
+    nodeId: string;
+    nodeType: string;
+    message: string;
+  };
+};
+
+type DataEvent =
+  | NodeStartedEvent
+  | NodeCompletedEvent
+  | NodeFailedEvent
+  | NodeResultEvent
+  | WorkflowStartedEvent
+  | WorkflowFailedEvent
+  | WorkflowCompletedEvent
+  | ToolStartedEvent
+  | ToolCompletedEvent
+  | ToolFailedEvent
+  | AgentNotificationEvent
+  | NodeLogEvent;
+
+const IsDataEvent = (event: any): event is DataEvent => {
+  return DataEventTypes.includes(event.type);
 };
 
 export class SupallmServerSSEClient implements SSEClient {
@@ -221,37 +286,30 @@ export class SupallmServerSSEClient implements SSEClient {
       },
     });
 
+    const removeAllListeners = (es: EventSource) => {
+      es.removeEventListener("data", dataEventCallback);
+    };
+
     const dataEventCallback = (event: MessageEvent) => {
       const result = JSON.parse(event.data);
 
-      const isBackendDataEvent = IsBackendDataEvent(result);
+      const isDataEvent = IsDataEvent(result);
 
-      if (!isBackendDataEvent) {
+      if (!isDataEvent) {
         console.warn("Received unrecognized event", event.data);
         return;
       }
 
-      this.triggerEvent("flowResultStream", {
-        fieldName: result.data.outputField,
-        value: result.data.data,
-        type: result.data.type,
-        workflowId: result.workflowId,
-        nodeId: result.data.nodeId,
-      });
-    };
-    es.addEventListener("data", dataEventCallback);
-
-    const workflowEventCallback = (event: MessageEvent) => {
-      const result = JSON.parse(event.data);
-
-      const isBackendWorkflowEvent = IsBackendWorkflowEvent(result);
-
-      if (!isBackendWorkflowEvent) {
-        console.warn("Received unrecognized workflow event", event.data);
-        return;
-      }
-
       switch (result.type) {
+        case "NODE_RESULT":
+          this.triggerEvent("flowResultStream", {
+            fieldName: result.data.outputField,
+            value: result.data.data,
+            type: result.data.type,
+            workflowId: result.workflowId,
+            nodeId: result.data.nodeId,
+          });
+          break;
         case "NODE_STARTED":
           this.triggerEvent("nodeStart", {
             nodeId: result.data.nodeId,
@@ -260,63 +318,64 @@ export class SupallmServerSSEClient implements SSEClient {
         case "NODE_COMPLETED":
           this.triggerEvent("nodeEnd", { nodeId: result.data.nodeId });
           break;
+        case "NODE_FAILED":
+          this.triggerEvent("nodeFail", {
+            nodeId: result.data.nodeId,
+            message: result.data.error,
+          });
+          break;
         case "WORKFLOW_STARTED":
           this.triggerEvent("flowStart", {});
           break;
-      }
-    };
-
-    es.addEventListener("workflow", workflowEventCallback);
-
-    const errorEventCallback = (event: MessageEvent) => {
-      const result = JSON.parse(event.data);
-
-      const isBackendErrorEvent = IsBackendErrorEvent(result);
-
-      if (!isBackendErrorEvent) {
-        console.warn("Received unrecognized error event", event.data);
-        return;
-      }
-
-      this.triggerEvent("nodeFail", {
-        nodeId: result.data.nodeId,
-        message: result.data.error,
-      });
-    };
-    es.addEventListener("error", errorEventCallback);
-
-    const removeAllListeners = (es: EventSource) => {
-      es.removeEventListener("data", dataEventCallback);
-      es.removeEventListener("error", errorEventCallback);
-      es.removeEventListener("workflow", workflowEventCallback);
-    };
-
-    es.addEventListener(
-      "complete",
-      (event) => {
-        const result = JSON.parse(event.data);
-        const isBackendCompleteEvent = IsBackendCompleteEvent(result);
-
-        if (!isBackendCompleteEvent) {
-          console.warn("Unrecognized complete event received", event.data);
-          return;
-        }
-
-        if (result.type === "WORKFLOW_FAILED") {
+        case "WORKFLOW_FAILED":
           this.triggerEvent("flowFail", {
             message: "An error occurred during the flow execution.",
           });
-        } else {
+          removeAllListeners(es);
+          break;
+        case "WORKFLOW_COMPLETED":
           this.triggerEvent("flowEnd", {});
-        }
-
-        es.close();
-        removeAllListeners(es);
-      },
-      {
-        once: true,
-      },
-    );
+          removeAllListeners(es);
+          break;
+        case "TOOL_STARTED":
+          this.triggerEvent("toolStart", {
+            nodeId: result.data.nodeId,
+            agentName: result.data.agentName,
+          });
+          break;
+        case "TOOL_COMPLETED":
+          this.triggerEvent("toolEnd", {
+            nodeId: result.data.nodeId,
+            agentName: result.data.agentName,
+          });
+          break;
+        case "TOOL_FAILED":
+          this.triggerEvent("toolFail", {
+            nodeId: result.data.nodeId,
+            agentName: result.data.agentName,
+          });
+          break;
+        case "AGENT_NOTIFICATION":
+          this.triggerEvent("agentNotification", {
+            nodeId: result.data.nodeId,
+            nodeType: result.data.nodeType,
+            type: result.data.type,
+            outputField: result.data.outputField,
+            data: result.data.data,
+          });
+          break;
+        case "NODE_LOG":
+          this.triggerEvent("nodeLog", {
+            nodeId: result.data.nodeId,
+            nodeType: result.data.nodeType,
+            message: result.data.message,
+          });
+          break;
+        default:
+          assertUnreachable(result);
+      }
+    };
+    es.addEventListener("data", dataEventCallback);
 
     return () => {
       es.close();
