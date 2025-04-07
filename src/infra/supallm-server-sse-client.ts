@@ -28,7 +28,6 @@ const DataEventTypes = [
 ] as const;
 
 export type DataEventType = (typeof DataEventTypes)[number];
-
 type NodeStartedEvent = {
   type: "NODE_STARTED";
   workflowId: string;
@@ -36,6 +35,7 @@ type NodeStartedEvent = {
   sessionId: string;
   data: {
     nodeId: string;
+    inputs: Record<string, unknown>;
   };
 };
 
@@ -46,7 +46,6 @@ type NodeCompletedEvent = {
   sessionId: string;
   data: {
     nodeId: string;
-    inputs: Record<string, unknown>;
     output: Record<string, unknown>;
   };
 };
@@ -60,7 +59,6 @@ type NodeFailedEvent = {
     error: string;
     nodeId: string;
     nodeType: string;
-    inputs: Record<string, unknown>;
   };
 };
 
@@ -118,7 +116,6 @@ type ToolCompletedEvent = {
   data: {
     nodeId: string;
     agentName: string;
-    inputs: Record<string, unknown>;
     output: Record<string, unknown>;
   };
 };
@@ -131,7 +128,6 @@ type ToolFailedEvent = {
   data: {
     nodeId: string;
     agentName: string;
-    inputs: Record<string, unknown>;
   };
 };
 
@@ -320,12 +316,12 @@ export class SupallmServerSSEClient implements SSEClient {
         case "NODE_STARTED":
           this.triggerEvent("nodeStart", {
             nodeId: result.data.nodeId,
+            input: result.data.inputs,
           });
           break;
         case "NODE_COMPLETED":
           this.triggerEvent("nodeEnd", {
             nodeId: result.data.nodeId,
-            input: result.data.inputs,
             output: result.data.output,
           });
           break;
@@ -333,7 +329,6 @@ export class SupallmServerSSEClient implements SSEClient {
           this.triggerEvent("nodeFail", {
             nodeId: result.data.nodeId,
             message: result.data.error,
-            input: result.data.inputs,
           });
           break;
         case "WORKFLOW_STARTED":
@@ -353,13 +348,13 @@ export class SupallmServerSSEClient implements SSEClient {
           this.triggerEvent("toolStart", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
+            input: result.data.inputs,
           });
           break;
         case "TOOL_COMPLETED":
           this.triggerEvent("toolEnd", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
-            input: result.data.inputs,
             output: result.data.output,
           });
           break;
@@ -367,7 +362,6 @@ export class SupallmServerSSEClient implements SSEClient {
           this.triggerEvent("toolFail", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
-            input: result.data.inputs,
           });
           break;
         case "AGENT_NOTIFICATION":

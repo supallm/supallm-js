@@ -28,18 +28,17 @@ export type FlowEndEvent = {
 
 export type NodeStartEvent = {
   nodeId: string;
+  input: Record<string, unknown>;
 };
 
 export type NodeEndEvent = {
   nodeId: string;
-  input: Record<string, unknown>;
   output: Record<string, unknown>;
 };
 
 export type NodeFailEvent = {
   nodeId: string;
   message: string;
-  input: Record<string, unknown>;
 };
 
 export type NodeLogEvent = {
@@ -50,19 +49,18 @@ export type NodeLogEvent = {
 export type ToolStartEvent = {
   nodeId: string;
   agentName: string;
+  input: Record<string, unknown>;
 };
 
 export type ToolEndEvent = {
   nodeId: string;
   agentName: string;
-  input: Record<string, unknown>;
   output: Record<string, unknown>;
 };
 
 export type ToolFailEvent = {
   nodeId: string;
   agentName: string;
-  input: Record<string, unknown>;
 };
 
 export type AgentNotificationEvent = {
@@ -186,33 +184,24 @@ export class FlowResponse {
     this.updateStatus("complete");
   }
 
-  private onNodeStart(nodeId: string) {
+  private onNodeStart(nodeId: string, input: Record<string, unknown>) {
     this.emitter.emit("nodeStart", {
       nodeId,
+      input,
     });
   }
 
-  private onNodeEnd(
-    nodeId: string,
-    input: Record<string, unknown>,
-    output: Record<string, unknown>,
-  ) {
+  private onNodeEnd(nodeId: string, output: Record<string, unknown>) {
     this.emitter.emit("nodeEnd", {
       nodeId,
-      input,
       output,
     });
   }
 
-  private onNodeFail(
-    nodeId: string,
-    message: string,
-    input: Record<string, unknown>,
-  ) {
+  private onNodeFail(nodeId: string, message: string) {
     this.emitter.emit("nodeFail", {
       nodeId,
       message,
-      input,
     });
   }
 
@@ -223,36 +212,29 @@ export class FlowResponse {
     });
   }
 
-  private onToolStart(nodeId: string, agentName: string) {
+  private onToolStart(
+    nodeId: string,
+    agentName: string,
+    input: Record<string, unknown>,
+  ) {
     this.emitter.emit("toolStart", {
       nodeId,
       agentName,
+      input,
     });
   }
 
-  private onToolEnd(
-    nodeId: string,
-    agentName: string,
-    input: Record<string, unknown>,
-    output: Record<string, unknown>,
-  ) {
+  private onToolEnd(nodeId: string, agentName: string) {
     this.emitter.emit("toolEnd", {
       nodeId,
       agentName,
-      input,
-      output,
     });
   }
 
-  private onToolFail(
-    nodeId: string,
-    agentName: string,
-    input: Record<string, unknown>,
-  ) {
+  private onToolFail(nodeId: string, agentName: string) {
     this.emitter.emit("toolFail", {
       nodeId,
       agentName,
-      input,
     });
   }
 
@@ -290,15 +272,15 @@ export class FlowResponse {
     });
 
     this.sseClient.addEventListener("nodeStart", (event) => {
-      this.onNodeStart(event.nodeId);
+      this.onNodeStart(event.nodeId, event.input);
     });
 
     this.sseClient.addEventListener("nodeEnd", (event) => {
-      this.onNodeEnd(event.nodeId, event.input, event.output);
+      this.onNodeEnd(event.nodeId, event.output);
     });
 
     this.sseClient.addEventListener("nodeFail", (event) => {
-      this.onNodeFail(event.nodeId, event.message, event.input);
+      this.onNodeFail(event.nodeId, event.message);
     });
 
     this.sseClient.addEventListener("nodeLog", (event) => {
@@ -306,15 +288,15 @@ export class FlowResponse {
     });
 
     this.sseClient.addEventListener("toolStart", (event) => {
-      this.onToolStart(event.nodeId, event.agentName);
+      this.onToolStart(event.nodeId, event.agentName, event.input);
     });
 
     this.sseClient.addEventListener("toolEnd", (event) => {
-      this.onToolEnd(event.nodeId, event.agentName, event.input, event.output);
+      this.onToolEnd(event.nodeId, event.agentName);
     });
 
     this.sseClient.addEventListener("toolFail", (event) => {
-      this.onToolFail(event.nodeId, event.agentName, event.input);
+      this.onToolFail(event.nodeId, event.agentName);
     });
 
     this.sseClient.addEventListener("agentNotification", (event) => {
