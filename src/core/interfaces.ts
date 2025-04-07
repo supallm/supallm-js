@@ -34,10 +34,13 @@ export interface SSEEventDataMap {
   };
   nodeEnd: {
     nodeId: string;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
   };
   nodeFail: {
     nodeId: string;
     message: string;
+    input: Record<string, unknown>;
   };
   nodeLog: {
     nodeId: string;
@@ -51,10 +54,13 @@ export interface SSEEventDataMap {
   toolEnd: {
     nodeId: string;
     agentName: string;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
   };
   toolFail: {
     nodeId: string;
     agentName: string;
+    input: Record<string, unknown>;
   };
   agentNotification: {
     nodeId: string;

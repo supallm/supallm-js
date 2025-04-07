@@ -44,6 +44,8 @@ type NodeCompletedEvent = {
   sessionId: string;
   data: {
     nodeId: string;
+    inputs: Record<string, unknown>;
+    output: Record<string, unknown>;
   };
 };
 
@@ -56,6 +58,7 @@ type NodeFailedEvent = {
     error: string;
     nodeId: string;
     nodeType: string;
+    inputs: Record<string, unknown>;
   };
 };
 
@@ -102,6 +105,7 @@ type ToolStartedEvent = {
   data: {
     nodeId: string;
     agentName: string;
+    inputs: Record<string, unknown>;
   };
 };
 
@@ -112,6 +116,8 @@ type ToolCompletedEvent = {
   data: {
     nodeId: string;
     agentName: string;
+    inputs: Record<string, unknown>;
+    output: Record<string, unknown>;
   };
 };
 
@@ -123,6 +129,7 @@ type ToolFailedEvent = {
   data: {
     nodeId: string;
     agentName: string;
+    inputs: Record<string, unknown>;
   };
 };
 
@@ -329,12 +336,17 @@ export class SupallmBrowserSSEClient implements SSEClient {
           });
           break;
         case "NODE_COMPLETED":
-          this.triggerEvent("nodeEnd", { nodeId: result.data.nodeId });
+          this.triggerEvent("nodeEnd", {
+            nodeId: result.data.nodeId,
+            input: result.data.inputs,
+            output: result.data.output,
+          });
           break;
         case "NODE_FAILED":
           this.triggerEvent("nodeFail", {
             nodeId: result.data.nodeId,
             message: result.data.error,
+            input: result.data.inputs,
           });
           break;
         case "WORKFLOW_STARTED":
@@ -360,12 +372,15 @@ export class SupallmBrowserSSEClient implements SSEClient {
           this.triggerEvent("toolEnd", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
+            input: result.data.inputs,
+            output: result.data.output,
           });
           break;
         case "TOOL_FAILED":
           this.triggerEvent("toolFail", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
+            input: result.data.inputs,
           });
           break;
         case "AGENT_NOTIFICATION":
