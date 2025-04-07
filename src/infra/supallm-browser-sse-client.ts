@@ -125,6 +125,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
        * (e.g. Supabase, Auth0, etc.)
        */
       origin: "dashboard" | "default";
+      sessionId?: string;
     },
   ) {
     this.baseUrl = config.apiUrl;

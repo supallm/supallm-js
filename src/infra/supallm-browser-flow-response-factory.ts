@@ -10,6 +10,7 @@ export class SupallmBrowserFlowResponseFactory implements FlowResponseFactory {
     flowId: string;
     inputs: Record<string, string | number | boolean>;
     origin: "dashboard" | "default";
+    sessionId?: string;
   }): FlowResponse {
     if (!params.userToken?.length) {
       throw new Error(
@@ -26,6 +27,6 @@ export class SupallmBrowserFlowResponseFactory implements FlowResponseFactory {
       origin: params.origin,
     });
 
-    return new FlowResponse(sseClient);
+    return new FlowResponse(sseClient, params.sessionId);
   }
 }

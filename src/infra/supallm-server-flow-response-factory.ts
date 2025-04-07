@@ -26,6 +26,6 @@ export class SupallmServerFlowResponseFactory implements FlowResponseFactory {
       inputs: params.inputs,
     });
 
-    return new FlowResponse(sseClient);
+    return new FlowResponse(sseClient, params.sessionId);
   }
 }
