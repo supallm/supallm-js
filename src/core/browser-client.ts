@@ -3,6 +3,7 @@ import { FlowResponseFactory } from "./flow-response";
 export type RunFlowParams = {
   flowId: string;
   inputs: Record<string, string | number | boolean>;
+  sessionId?: string;
 };
 
 export class SupallmBrowserClient {
@@ -39,7 +40,7 @@ export class SupallmBrowserClient {
    * 
    * @example
    * ```ts
-   * const flowResponse = supallm.runFlow({
+   * const flowResponse = supallm.run({
    *   flowId: "flow-id",
    *   inputs: {
    *     name: "John Doe",
@@ -61,7 +62,7 @@ export class SupallmBrowserClient {
    * 
    * @example
    * ```ts
-   * const flowResponse = supallm.runFlow({
+   * const flowResponse = supallm.run({
    *   flowId: "flow-id",
    *   inputs: {
    *     name: "John Doe",
@@ -69,7 +70,7 @@ export class SupallmBrowserClient {
    * }).wait();
    * ```
    */
-  runFlow(params: RunFlowParams) {
+  run(params: RunFlowParams) {
     if (!this.userToken) {
       throw new Error(
         "User Token is required to run a flow securely from the frontend. Please set it using setUserToken method.",
@@ -82,6 +83,7 @@ export class SupallmBrowserClient {
       userToken: this.userToken,
       flowId: params.flowId,
       inputs: params.inputs,
+      sessionId: params.sessionId,
       origin: this.origin,
     });
   }

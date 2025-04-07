@@ -1,11 +1,11 @@
 {
   "name": "examples",
   "version": "1.0.0",
-  "description": "",
+  "description": "Supallm is an open-source ecosystem allowing to use AI models directly in your frontend. Ship AI apps in minutes, scale to millions.",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "index.js",  
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

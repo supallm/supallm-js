@@ -156,6 +156,10 @@ export class SupallmServerSSEClient implements SSEClient {
     return uuidv4();
   }
 
+  public generateSessionId() {
+    return uuidv4();
+  }
+
   private getAuthHeaders() {
     return {
       "X-Secret-Key": this.config.apiKey,
@@ -169,9 +173,11 @@ export class SupallmServerSSEClient implements SSEClient {
     };
   }
 
-  async triggerFlow(triggerId: string) {
+  async triggerFlow(triggerId: string, _sessionId?: string) {
     try {
       const url = this.buildTriggerUrl();
+
+      const sessionId = _sessionId ?? this.generateSessionId();
 
       const response = await fetch(url, {
         method: "POST",
@@ -179,6 +185,7 @@ export class SupallmServerSSEClient implements SSEClient {
         body: JSON.stringify({
           inputs: this.config.inputs,
           triggerId,
+          sessionId,
         }),
       });
 
@@ -190,7 +197,9 @@ export class SupallmServerSSEClient implements SSEClient {
 
       await response.json();
 
-      return Result.ok();
+      return Result.ok({
+        sessionId,
+      });
     } catch (error) {
       return Result.error(
         new HttpFailureError(

@@ -10,6 +10,7 @@ export class SupallmServerFlowResponseFactory implements FlowResponseFactory {
     flowId: string;
     inputs: Record<string, string | number | boolean>;
     origin: "dashboard" | "default";
+    sessionId?: string;
   }): FlowResponse {
     if (!params.apiKey?.length) {
       throw new Error(

@@ -11,7 +11,7 @@ supallm.setUserToken("access-token");
  * Subscribe to the flow result to get the result streams as they come in
  */
 const result = supallm
-  .runFlow({
+  .run({
     flowId: "f641cf81-5f51-4da9-b08a-504f15834351",
     inputs: {
       prompt: "Write a short story about a cat",
@@ -35,7 +35,7 @@ result.on("error", (event) => {
  * Wait for the flow to complete before logging the result
  */
 supallm
-  .runFlow({
+  .run({
     flowId: "f641cf81-5f51-4da9-b08a-504f15834351",
     inputs: {
       prompt: "answer shot because I am running out of money",

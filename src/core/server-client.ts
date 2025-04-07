@@ -3,6 +3,7 @@ import { FlowResponseFactory } from "./flow-response";
 export type RunFlowParams = {
   flowId: string;
   inputs: Record<string, string | number | boolean>;
+  sessionId?: string;
 };
 
 export class SupallmServerClient {
@@ -22,7 +23,7 @@ export class SupallmServerClient {
    * 
    * @example
    * ```ts
-   * const flowResponse = supallm.runFlow({
+   * const flowResponse = supallm.run({
    *   flowId: "flow-id",
    *   inputs: {
    *     name: "John Doe",
@@ -44,7 +45,7 @@ export class SupallmServerClient {
    * 
    * @example
    * ```ts
-   * const flowResponse = supallm.runFlow({
+   * const flowResponse = supallm.run({
    *   flowId: "flow-id",
    *   inputs: {
    *     name: "John Doe",
@@ -52,7 +53,7 @@ export class SupallmServerClient {
    * }).wait();
    * ```
    */
-  runFlow(params: RunFlowParams) {
+  run(params: RunFlowParams) {
     return this.flowResponseFactory.create({
       apiUrl: this.apiUrl,
       projectId: this.projectId,
@@ -60,6 +61,7 @@ export class SupallmServerClient {
       flowId: params.flowId,
       inputs: params.inputs,
       origin: "default",
+      sessionId: params.sessionId,
     });
   }
 }

@@ -86,7 +86,7 @@ supallm.setUserToken("<your-user-token>");
 
 ```ts
 const sub = supallm
-  .runFlow({
+  .run({
     flowId: "<your-flow-id>",
     inputs: {
       name: "John Doe",
@@ -127,7 +127,7 @@ result.on("nodeEnd", (event) => {
 
 ```ts
 const response = await supallm
-  .runFlow({
+  .run({
     flowId: "<your-flow-id>",
     inputs: {
       name: "John Doe",

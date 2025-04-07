@@ -53,7 +53,9 @@ export interface Unsubscribe {
 
 export interface SSEClient {
   generateTriggerId(): string;
-  triggerFlow(triggerId: string): Promise<Result<void, TriggerFlowError>>;
+  triggerFlow(triggerId: string, sessionId?: string): Promise<Result<{
+    sessionId: string;
+  }, TriggerFlowError>>;
   listenFlow(triggerId: string): Promise<Unsubscribe>;
   addEventListener<K extends SSEClientEventType>(
     event: K,

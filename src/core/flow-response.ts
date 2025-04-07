@@ -75,6 +75,7 @@ export type CreateFlowResponseParams = {
   flowId: string;
   inputs: Record<string, string | number | boolean>;
   origin: "dashboard" | "default";
+  sessionId?: string;
 };
 
 export interface FlowResponseFactory {
@@ -97,7 +98,10 @@ export class FlowResponse {
   private result: FlowResult = {};
   private status: FlowResponseStatus = "pending";
 
-  constructor(private readonly sseClient: SSEClient) {}
+  constructor(
+    private readonly sseClient: SSEClient,
+    public _sessionId?: string,
+  ) {}
 
   private concatResult(data: FlowResultStreamEvent) {
     if (this.result[data.fieldName]) {
@@ -202,13 +206,33 @@ export class FlowResponse {
     });
 
     const triggerId = this.sseClient.generateTriggerId();
-    const unsubscribe = await this.sseClient.listenFlow(triggerId);
-    const triggerResult = await this.sseClient.triggerFlow(triggerId);
 
-    if (triggerResult.isError()) {
+    const unsubscribe = await this.sseClient.listenFlow(triggerId);
+
+    const triggerResult = await this.sseClient.triggerFlow(
+      triggerId,
+      this._sessionId
+    );
+
+    const [result, error] = triggerResult.toTuple();
+
+    if (error) {
       unsubscribe();
-      throw triggerResult.error;
+      throw error;
     }
+
+    this._sessionId = result.sessionId;
+
+    return { sessionId: this._sessionId }
+
+  }
+
+  public get sessionId() {
+    if (!this._sessionId) {
+      throw new Error("Session ID is not set. Please use the run method before calling this getter.");
+    }
+
+    return this._sessionId;
   }
 
   public subscribe(): FlowSubscription {

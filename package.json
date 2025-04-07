@@ -6,6 +6,7 @@
   "author": "Kevin Piacentini <kevin@supallm.com>",
   "license": "Apache-2.0",
   "homepage": "https://supallm.com",
+  "description": "Build AI agents with no code and control them in real-time using Supallm.",
   "repository": {
     "type": "git",
     "url": "https://github.com/supallm/supallm-js"
