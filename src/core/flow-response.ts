@@ -224,10 +224,15 @@ export class FlowResponse {
     });
   }
 
-  private onToolEnd(nodeId: string, agentName: string) {
+  private onToolEnd(
+    nodeId: string,
+    agentName: string,
+    output: Record<string, unknown>,
+  ) {
     this.emitter.emit("toolEnd", {
       nodeId,
       agentName,
+      output,
     });
   }
 
@@ -292,7 +297,7 @@ export class FlowResponse {
     });
 
     this.sseClient.addEventListener("toolEnd", (event) => {
-      this.onToolEnd(event.nodeId, event.agentName);
+      this.onToolEnd(event.nodeId, event.agentName, event.output);
     });
 
     this.sseClient.addEventListener("toolFail", (event) => {
