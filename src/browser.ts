@@ -51,6 +51,7 @@ export const initSupallm = (
 };
 
 export type {
+  AgentNotificationEvent,
   FlowAwaitedResponse,
   FlowEndEvent,
   FlowEvent,
@@ -64,6 +65,9 @@ export type {
   NodeFailEvent,
   NodeLogEvent,
   NodeStartEvent,
+  ToolEndEvent,
+  ToolFailEvent,
+  ToolStartEvent,
 } from "./core/flow-response";
 
 export type { Unsubscribe } from "nanoevents";
