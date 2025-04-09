@@ -293,6 +293,11 @@ export class SupallmServerSSEClient implements SSEClient {
       es.removeEventListener("data", dataEventCallback);
     };
 
+    const unsubscribe = () => {
+      es.close();
+      removeAllListeners(es);
+    };
+
     const dataEventCallback = (event: MessageEvent) => {
       const result = JSON.parse(event.data);
 
@@ -338,11 +343,11 @@ export class SupallmServerSSEClient implements SSEClient {
           this.triggerEvent("flowFail", {
             message: "An error occurred during the flow execution.",
           });
-          removeAllListeners(es);
+          unsubscribe();
           break;
         case "WORKFLOW_COMPLETED":
           this.triggerEvent("flowEnd", {});
-          removeAllListeners(es);
+          unsubscribe();
           break;
         case "TOOL_STARTED":
           this.triggerEvent("toolStart", {
@@ -386,10 +391,7 @@ export class SupallmServerSSEClient implements SSEClient {
     };
     es.addEventListener("data", dataEventCallback);
 
-    return () => {
-      es.close();
-      removeAllListeners(es);
-    };
+    return unsubscribe;
   }
 
   addEventListener<K extends SSEClientEventType>(
