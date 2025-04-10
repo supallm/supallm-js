@@ -127,6 +127,7 @@ type ToolFailedEvent = {
   data: {
     nodeId: string;
     agentName: string;
+    error: string;
   };
 };
 
@@ -347,7 +348,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
         case "NODE_FAILED":
           this.triggerEvent("nodeFail", {
             nodeId: result.data.nodeId,
-            message: result.data.error,
+            error: result.data.error,
           });
           break;
         case "WORKFLOW_STARTED":
@@ -381,6 +382,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
           this.triggerEvent("toolFail", {
             nodeId: result.data.nodeId,
             agentName: result.data.agentName,
+            error: result.data.error,
           });
           break;
         case "AGENT_NOTIFICATION":

@@ -38,7 +38,7 @@ export type NodeEndEvent = {
 
 export type NodeFailEvent = {
   nodeId: string;
-  message: string;
+  error: string;
 };
 
 export type NodeLogEvent = {
@@ -61,6 +61,7 @@ export type ToolEndEvent = {
 export type ToolFailEvent = {
   nodeId: string;
   agentName: string;
+  error: string;
 };
 
 export type AgentNotificationEvent = {
@@ -198,10 +199,10 @@ export class FlowResponse {
     });
   }
 
-  private onNodeFail(nodeId: string, message: string) {
+  private onNodeFail(nodeId: string, error: string) {
     this.emitter.emit("nodeFail", {
       nodeId,
-      message,
+      error,
     });
   }
 
@@ -236,10 +237,11 @@ export class FlowResponse {
     });
   }
 
-  private onToolFail(nodeId: string, agentName: string) {
+  private onToolFail(nodeId: string, agentName: string, error: string) {
     this.emitter.emit("toolFail", {
       nodeId,
       agentName,
+      error,
     });
   }
 
@@ -285,7 +287,7 @@ export class FlowResponse {
     });
 
     this.sseClient.addEventListener("nodeFail", (event) => {
-      this.onNodeFail(event.nodeId, event.message);
+      this.onNodeFail(event.nodeId, event.error);
     });
 
     this.sseClient.addEventListener("nodeLog", (event) => {
@@ -301,7 +303,7 @@ export class FlowResponse {
     });
 
     this.sseClient.addEventListener("toolFail", (event) => {
-      this.onToolFail(event.nodeId, event.agentName);
+      this.onToolFail(event.nodeId, event.agentName, event.error);
     });
 
     this.sseClient.addEventListener("agentNotification", (event) => {

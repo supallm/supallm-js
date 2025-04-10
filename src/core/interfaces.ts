@@ -39,7 +39,7 @@ export interface SSEEventDataMap {
   };
   nodeFail: {
     nodeId: string;
-    message: string;
+    error: string;
   };
   nodeLog: {
     nodeId: string;
@@ -59,6 +59,7 @@ export interface SSEEventDataMap {
   toolFail: {
     nodeId: string;
     agentName: string;
+    error: string;
   };
   agentNotification: {
     nodeId: string;
