@@ -71,7 +71,7 @@ type NodeResultEvent = {
     nodeId: string;
     nodeType: string;
     outputField: string;
-    type: "text" | "image" | "any";
+    ioType: "text" | "image" | "any";
   };
 };
 
@@ -140,7 +140,7 @@ type AgentNotificationEvent = {
     data: string;
     nodeId: string;
     nodeType: string;
-    type: "any";
+    ioType: "any";
     outputField: string;
   };
 };
@@ -328,7 +328,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
           this.triggerEvent("flowResultStream", {
             fieldName: result.data.outputField,
             value: result.data.data,
-            type: result.data.type,
+            type: result.data.ioType,
             workflowId: result.workflowId,
             nodeId: result.data.nodeId,
           });
@@ -389,7 +389,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
           this.triggerEvent("agentNotification", {
             nodeId: result.data.nodeId,
             nodeType: result.data.nodeType,
-            type: result.data.type,
+            type: result.data.ioType,
             outputField: result.data.outputField,
             data: result.data.data,
           });
