@@ -395,6 +395,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
     }
 
     this.isDispatchingMissedEvents = false;
+    this.missedEventsHandled = true;
     this.dispatchQueueEvents(unsubscribe);
   }
 
@@ -431,7 +432,6 @@ export class SupallmBrowserSSEClient implements SSEClient {
     };
 
     const unsubscribe = () => {
-      console.log("Unsubscribing from flow");
       es.close();
       removeAllListeners(es);
     };
