@@ -178,7 +178,9 @@ const IsDataEvent = (event: any): event is DataEvent => {
 export class SupallmBrowserSSEClient implements SSEClient {
   private baseUrl: string;
   private projectId: string;
-  private missedEvents: DataEvent[] = [];
+  private missedEventQueue: DataEvent[] = [];
+  private eventQueue: DataEvent[] = [];
+  private missedEventsHandled = false;
   private isDispatchingMissedEvents = false;
 
   constructor(
@@ -376,14 +378,14 @@ export class SupallmBrowserSSEClient implements SSEClient {
   }
 
   private dispatchMissedEventsOnce(unsubscribe: () => void) {
-    if (this.isDispatchingMissedEvents) {
+    if (this.isDispatchingMissedEvents || this.missedEventsHandled) {
       return;
     }
 
     this.isDispatchingMissedEvents = true;
 
-    while (this.missedEvents.length) {
-      const event = this.missedEvents.shift();
+    while (this.missedEventQueue.length) {
+      const event = this.missedEventQueue.shift();
 
       if (!event) {
         continue;
@@ -393,6 +395,19 @@ export class SupallmBrowserSSEClient implements SSEClient {
     }
 
     this.isDispatchingMissedEvents = false;
+    this.dispatchQueueEvents(unsubscribe);
+  }
+
+  private dispatchQueueEvents(unsubscribe: () => void) {
+    while (this.eventQueue.length) {
+      const event = this.eventQueue.shift();
+
+      if (!event) {
+        continue;
+      }
+
+      this.dispatchEvent(event, unsubscribe);
+    }
   }
 
   async listenFlow(triggerId: string) {
@@ -429,6 +444,8 @@ export class SupallmBrowserSSEClient implements SSEClient {
         return;
       }
 
+      this.missedEventQueue = result;
+
       this.dispatchMissedEventsOnce(unsubscribe);
     };
 
@@ -442,12 +459,29 @@ export class SupallmBrowserSSEClient implements SSEClient {
         return;
       }
 
-      if (!this.missedEvents?.length) {
-        this.missedEvents.push(result);
-        this.dispatchMissedEventsOnce(unsubscribe);
+      /**
+       * If the missed events have not been handled yet, we need to add the event to the queue
+       * so that it can be dispatched later.
+       */
+      if (!this.missedEventsHandled) {
+        this.eventQueue.push(result);
         return;
       }
 
+      /**
+       * In the case where the missed events have been handled but there are still events in the queue,
+       * it means the queue is currently being dispatched, so we need to add the event to the queue
+       * so that it can be dispatched last.
+       */
+      if (this.missedEventsHandled && this.eventQueue.length) {
+        this.eventQueue.push(result);
+        return;
+      }
+
+      /**
+       * If we're here, it means the missed events have been handled and there are no events in the queue.
+       * So we can dispatch the event immediately.
+       */
       return this.dispatchEvent(result, unsubscribe);
     };
 
@@ -470,6 +504,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
 
   close(): void {
     this.events = [];
-    this.missedEvents = [];
+    this.missedEventQueue = [];
+    this.eventQueue = [];
   }
 }
