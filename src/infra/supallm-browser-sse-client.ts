@@ -178,6 +178,8 @@ const IsDataEvent = (event: any): event is DataEvent => {
 export class SupallmBrowserSSEClient implements SSEClient {
   private baseUrl: string;
   private projectId: string;
+  private missedEvents: MessageEvent[] = [];
+  private isDispatchingMissedEvents = false;
 
   constructor(
     private readonly config: {
@@ -289,6 +291,122 @@ export class SupallmBrowserSSEClient implements SSEClient {
     }
   }
 
+  private async dispatchEvent(event: MessageEvent, unsubscribe: () => void) {
+    const result = JSON.parse(event.data);
+
+    const isDataEvent = IsDataEvent(result);
+
+    if (!isDataEvent) {
+      console.warn("Received unrecognized event", event.data);
+      return;
+    }
+
+    switch (result.type) {
+      case "NODE_RESULT":
+        this.triggerEvent("flowResultStream", {
+          fieldName: result.data.outputField,
+          value: result.data.data,
+          type: result.data.ioType,
+          workflowId: result.workflowId,
+          nodeId: result.data.nodeId,
+        });
+        break;
+      case "NODE_STARTED":
+        this.triggerEvent("nodeStart", {
+          nodeId: result.data.nodeId,
+          input: result.data.inputs,
+        });
+        break;
+      case "NODE_COMPLETED":
+        this.triggerEvent("nodeEnd", {
+          nodeId: result.data.nodeId,
+          output: result.data.output,
+        });
+        break;
+      case "NODE_FAILED":
+        this.triggerEvent("nodeFail", {
+          nodeId: result.data.nodeId,
+          error: result.data.error,
+        });
+        break;
+      case "WORKFLOW_STARTED":
+        this.triggerEvent("flowStart", {});
+        break;
+      case "WORKFLOW_FAILED":
+        this.triggerEvent("flowFail", {
+          message: "An error occurred during the flow execution.",
+        });
+        unsubscribe();
+        break;
+      case "WORKFLOW_COMPLETED":
+        this.triggerEvent("flowEnd", {});
+        unsubscribe();
+        break;
+      case "TOOL_STARTED":
+        this.triggerEvent("toolStart", {
+          nodeId: result.data.nodeId,
+          agentName: result.data.agentName,
+          input: result.data.inputs,
+        });
+        break;
+      case "TOOL_COMPLETED":
+        this.triggerEvent("toolEnd", {
+          nodeId: result.data.nodeId,
+          agentName: result.data.agentName,
+          output: result.data.output,
+        });
+        break;
+      case "TOOL_FAILED":
+        this.triggerEvent("toolFail", {
+          nodeId: result.data.nodeId,
+          agentName: result.data.agentName,
+          error: result.data.error,
+        });
+        break;
+      case "AGENT_NOTIFICATION":
+        this.triggerEvent("agentNotification", {
+          nodeId: result.data.nodeId,
+          nodeType: result.data.nodeType,
+          type: result.data.ioType,
+          outputField: result.data.outputField,
+          data: result.data.data,
+        });
+        break;
+      case "NODE_LOG":
+        this.triggerEvent("nodeLog", {
+          nodeId: result.data.nodeId,
+          nodeType: result.data.nodeType,
+          message: result.data.message,
+        });
+        break;
+      default:
+        assertUnreachable(result);
+    }
+  }
+
+  private dispatchMissedEventsOnce(
+    events: MessageEvent[],
+    unsubscribe: () => void,
+  ) {
+    if (this.isDispatchingMissedEvents) {
+      return;
+    }
+
+    this.isDispatchingMissedEvents = true;
+
+    while (events.length) {
+      const event = events.shift();
+
+      if (!event) {
+        continue;
+      }
+
+      this.dispatchEvent(event, unsubscribe);
+    }
+
+    this.isDispatchingMissedEvents = false;
+  }
+
   async listenFlow(triggerId: string) {
     const url = this.buildListenUrl(triggerId);
 
@@ -306,105 +424,40 @@ export class SupallmBrowserSSEClient implements SSEClient {
 
     const removeAllListeners = (es: EventSource) => {
       es.removeEventListener("data", dataEventCallback);
+      es.removeEventListener("resume", resumeEventCallback);
     };
 
     const unsubscribe = () => {
+      console.log("Unsubscribing from flow");
       es.close();
       removeAllListeners(es);
     };
 
-    const dataEventCallback = (event: MessageEvent) => {
+    const resumeEventCallback = (event: MessageEvent) => {
       const result = JSON.parse(event.data);
 
-      const isDataEvent = IsDataEvent(result);
-
-      if (!isDataEvent) {
-        console.warn("Received unrecognized event", event.data);
+      if (!Array.isArray(result)) {
+        console.warn("Received non-array data in resume event");
         return;
       }
 
-      switch (result.type) {
-        case "NODE_RESULT":
-          this.triggerEvent("flowResultStream", {
-            fieldName: result.data.outputField,
-            value: result.data.data,
-            type: result.data.ioType,
-            workflowId: result.workflowId,
-            nodeId: result.data.nodeId,
-          });
-          break;
-        case "NODE_STARTED":
-          this.triggerEvent("nodeStart", {
-            nodeId: result.data.nodeId,
-            input: result.data.inputs,
-          });
-          break;
-        case "NODE_COMPLETED":
-          this.triggerEvent("nodeEnd", {
-            nodeId: result.data.nodeId,
-            output: result.data.output,
-          });
-          break;
-        case "NODE_FAILED":
-          this.triggerEvent("nodeFail", {
-            nodeId: result.data.nodeId,
-            error: result.data.error,
-          });
-          break;
-        case "WORKFLOW_STARTED":
-          this.triggerEvent("flowStart", {});
-          break;
-        case "WORKFLOW_FAILED":
-          this.triggerEvent("flowFail", {
-            message: "An error occurred during the flow execution.",
-          });
-          unsubscribe();
-          break;
-        case "WORKFLOW_COMPLETED":
-          this.triggerEvent("flowEnd", {});
-          unsubscribe();
-          break;
-        case "TOOL_STARTED":
-          this.triggerEvent("toolStart", {
-            nodeId: result.data.nodeId,
-            agentName: result.data.agentName,
-            input: result.data.inputs,
-          });
-          break;
-        case "TOOL_COMPLETED":
-          this.triggerEvent("toolEnd", {
-            nodeId: result.data.nodeId,
-            agentName: result.data.agentName,
-            output: result.data.output,
-          });
-          break;
-        case "TOOL_FAILED":
-          this.triggerEvent("toolFail", {
-            nodeId: result.data.nodeId,
-            agentName: result.data.agentName,
-            error: result.data.error,
-          });
-          break;
-        case "AGENT_NOTIFICATION":
-          this.triggerEvent("agentNotification", {
-            nodeId: result.data.nodeId,
-            nodeType: result.data.nodeType,
-            type: result.data.ioType,
-            outputField: result.data.outputField,
-            data: result.data.data,
-          });
-          break;
-        case "NODE_LOG":
-          this.triggerEvent("nodeLog", {
-            nodeId: result.data.nodeId,
-            nodeType: result.data.nodeType,
-            message: result.data.message,
-          });
-          break;
-        default:
-          assertUnreachable(result);
-      }
+      this.dispatchMissedEventsOnce(result, unsubscribe);
     };
+
+    const dataEventCallback = (event: MessageEvent) => {
+      if (!this.missedEvents?.length) {
+        this.missedEvents.push(event);
+        this.dispatchMissedEventsOnce(this.missedEvents, unsubscribe);
+        return;
+      }
+
+      return this.dispatchEvent(event, unsubscribe);
+    };
+
+    es.addEventListener("resume", resumeEventCallback, {
+      once: true,
+    });
+
     es.addEventListener("data", dataEventCallback);
 
     return unsubscribe;
@@ -420,5 +473,6 @@ export class SupallmBrowserSSEClient implements SSEClient {
 
   close(): void {
     this.events = [];
+    this.missedEvents = [];
   }
 }
