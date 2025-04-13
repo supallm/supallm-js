@@ -178,7 +178,7 @@ const IsDataEvent = (event: any): event is DataEvent => {
 export class SupallmBrowserSSEClient implements SSEClient {
   private baseUrl: string;
   private projectId: string;
-  private missedEvents: MessageEvent[] = [];
+  private missedEvents: DataEvent[] = [];
   private isDispatchingMissedEvents = false;
 
   constructor(
@@ -291,16 +291,7 @@ export class SupallmBrowserSSEClient implements SSEClient {
     }
   }
 
-  private async dispatchEvent(event: MessageEvent, unsubscribe: () => void) {
-    const result = JSON.parse(event.data);
-
-    const isDataEvent = IsDataEvent(result);
-
-    if (!isDataEvent) {
-      console.warn("Received unrecognized event", event.data);
-      return;
-    }
-
+  private async dispatchEvent(result: DataEvent, unsubscribe: () => void) {
     switch (result.type) {
       case "NODE_RESULT":
         this.triggerEvent("flowResultStream", {
@@ -384,18 +375,15 @@ export class SupallmBrowserSSEClient implements SSEClient {
     }
   }
 
-  private dispatchMissedEventsOnce(
-    events: MessageEvent[],
-    unsubscribe: () => void,
-  ) {
+  private dispatchMissedEventsOnce(unsubscribe: () => void) {
     if (this.isDispatchingMissedEvents) {
       return;
     }
 
     this.isDispatchingMissedEvents = true;
 
-    while (events.length) {
-      const event = events.shift();
+    while (this.missedEvents.length) {
+      const event = this.missedEvents.shift();
 
       if (!event) {
         continue;
@@ -441,17 +429,26 @@ export class SupallmBrowserSSEClient implements SSEClient {
         return;
       }
 
-      this.dispatchMissedEventsOnce(result, unsubscribe);
+      this.dispatchMissedEventsOnce(unsubscribe);
     };
 
     const dataEventCallback = (event: MessageEvent) => {
-      if (!this.missedEvents?.length) {
-        this.missedEvents.push(event);
-        this.dispatchMissedEventsOnce(this.missedEvents, unsubscribe);
+      const result = JSON.parse(event.data);
+
+      const isDataEvent = IsDataEvent(result);
+
+      if (!isDataEvent) {
+        console.warn("Received unrecognized event", event.data);
         return;
       }
 
-      return this.dispatchEvent(event, unsubscribe);
+      if (!this.missedEvents?.length) {
+        this.missedEvents.push(result);
+        this.dispatchMissedEventsOnce(unsubscribe);
+        return;
+      }
+
+      return this.dispatchEvent(result, unsubscribe);
     };
 
     es.addEventListener("resume", resumeEventCallback, {
